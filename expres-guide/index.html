@@ -1,0 +1,1088 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Uso avanzado de Middleware express</title>
+<link rel="icon" href="https://desingdata.github.io/desingdata/img/DesingData_favicon-96x96.png" sizes="96x96" type="image/png">
+<style>
+:root {
+  --bg: #0f1117;
+  --bg2: #1a1d27;
+  --bg3: #242736;
+  --border: rgba(255,255,255,0.08);
+  --border2: rgba(255,255,255,0.15);
+  --text: #e8eaf0;
+  --text2: #9ca3af;
+  --accent: #6c63ff;
+  --accent2: #a78bfa;
+  --green: #10b981;
+  --amber: #f59e0b;
+  --red: #ef4444;
+  --blue: #3b82f6;
+  --pink: #ec4899;
+  --teal: #14b8a6;
+  --font-mono: 'Courier New', monospace;
+  --font-main: 'Segoe UI', system-ui, sans-serif;
+  --radius: 10px;
+  --radius-sm: 6px;
+}
+[data-theme="light"] {
+  --bg: #f8f9fc;
+  --bg2: #ffffff;
+  --bg3: #f1f3f9;
+  --border: rgba(0,0,0,0.08);
+  --border2: rgba(0,0,0,0.15);
+  --text: #1a1d27;
+  --text2: #6b7280;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: var(--font-main);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  transition: background 0.3s, color 0.3s;
+}
+
+/* NAVBAR */
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  padding: 0 1rem;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 56px;
+  backdrop-filter: blur(12px);
+}
+.nav-brand {
+  display: flex; align-items: center; gap: 10px;
+  font-weight: 700; font-size: 15px;
+  color: var(--text);
+}
+.nav-brand span { color: var(--accent2); }
+.nav-links {
+  display: flex; gap: 4px; list-style: none;
+}
+.nav-links a {
+  color: var(--text2); text-decoration: none;
+  padding: 6px 10px; border-radius: var(--radius-sm);
+  font-size: 13px; transition: all 0.2s;
+  white-space: nowrap;
+}
+.nav-links a:hover { color: var(--text); background: var(--bg3); }
+.nav-right { display: flex; align-items: center; gap: 8px; }
+.btn-theme {
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text); cursor: pointer; border-radius: var(--radius-sm);
+  padding: 6px 10px; font-size: 13px; transition: all 0.2s;
+}
+.btn-theme:hover { border-color: var(--accent); }
+.hamburger {
+  display: none; flex-direction: column; gap: 5px;
+  cursor: pointer; padding: 8px; border: none; background: none;
+}
+.hamburger span {
+  display: block; width: 22px; height: 2px;
+  background: var(--text); border-radius: 2px;
+  transition: all 0.3s;
+}
+.hamburger.open span:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
+.hamburger.open span:nth-child(2) { opacity: 0; }
+.hamburger.open span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
+.mobile-menu {
+  display: none; position: fixed; top: 56px; left: 0; right: 0;
+  background: var(--bg2); border-bottom: 1px solid var(--border);
+  padding: 1rem; z-index: 99;
+  flex-direction: column; gap: 4px;
+}
+.mobile-menu.open { display: flex; }
+.mobile-menu a {
+  color: var(--text2); text-decoration: none;
+  padding: 10px 12px; border-radius: var(--radius-sm);
+  font-size: 14px; transition: all 0.2s;
+}
+.mobile-menu a:hover { color: var(--text); background: var(--bg3); }
+
+/* HERO */
+.hero {
+  padding: 3rem 1rem 2rem;
+  text-align: center;
+  background: linear-gradient(180deg, var(--bg) 0%, var(--bg) 100%);
+  border-bottom: 1px solid var(--border);
+}
+.hero h1 { font-size: clamp(1.5rem, 4vw, 2.4rem); font-weight: 800; margin-bottom: 0.5rem; }
+.hero h1 span { color: var(--accent2); }
+.hero p { color: var(--text2); font-size: 14px; max-width: 520px; margin: 0 auto 1.5rem; line-height: 1.7; }
+.badge-row { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.badge {
+  background: var(--bg3); border: 1px solid var(--border);
+  padding: 4px 10px; border-radius: 20px; font-size: 11px;
+  font-weight: 600; letter-spacing: 0.02em;
+  color: var(--text2);
+}
+
+/* MAIN LAYOUT */
+main { max-width: 960px; margin: 0 auto; padding: 2rem 1rem 4rem; }
+.section-grid { display: flex; flex-direction: column; gap: 1.5rem; }
+
+/* TOPIC CARDS */
+.topic-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.topic-card:hover { border-color: var(--border2); }
+.topic-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 1rem 1.25rem 0.875rem;
+  cursor: pointer;
+  user-select: none;
+}
+.topic-icon {
+  width: 36px; height: 36px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; flex-shrink: 0;
+}
+.topic-title { flex: 1; }
+.topic-title h2 { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
+.topic-title p { font-size: 11px; color: var(--text2); }
+.topic-toggle {
+  font-size: 12px; color: var(--text2);
+  transition: transform 0.2s;
+}
+.topic-toggle.open { transform: rotate(180deg); }
+.topic-body {
+  display: none; padding: 0 1.25rem 1.25rem;
+  border-top: 1px solid var(--border);
+}
+.topic-body.open { display: block; }
+.topic-desc {
+  font-size: 13px; color: var(--text2); line-height: 1.7;
+  padding: 0.875rem 0 0.875rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0.875rem;
+}
+
+/* CODE BLOCKS */
+.code-block {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  margin-bottom: 0.875rem;
+}
+.code-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--bg3);
+  border-bottom: 1px solid var(--border);
+}
+.code-lang {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--text2);
+}
+.code-filename { font-size: 11px; color: var(--accent2); font-family: var(--font-mono); }
+.copy-btn {
+  background: transparent; border: 1px solid var(--border);
+  color: var(--text2); cursor: pointer; border-radius: 4px;
+  padding: 3px 8px; font-size: 10px; transition: all 0.2s;
+}
+.copy-btn:hover { background: var(--bg2); color: var(--text); }
+pre {
+  padding: 1rem; overflow-x: auto;
+  font-family: var(--font-mono); font-size: 12px;
+  line-height: 1.75; color: var(--text);
+  white-space: pre;
+}
+/* Syntax highlighting */
+.kw { color: #c792ea; }
+.str { color: #c3e88d; }
+.com { color: #546e7a; font-style: italic; }
+.fn { color: #82aaff; }
+.num { color: #f78c6c; }
+.prop { color: #ffcb6b; }
+.tag { color: #f07178; }
+.var { color: #eeffff; }
+
+/* NOTE BOXES */
+.note {
+  background: var(--bg3); border-left: 3px solid;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  padding: 10px 12px; font-size: 12px; line-height: 1.6;
+  color: var(--text2); margin-bottom: 0.875rem;
+}
+.note.warn { border-color: var(--amber); }
+.note.info { border-color: var(--blue); }
+.note.tip { border-color: var(--green); }
+.note strong { font-weight: 700; }
+
+/* STEP LIST */
+.steps { list-style: none; display: flex; flex-direction: column; gap: 6px; margin-bottom: 0.875rem; }
+.steps li {
+  display: flex; align-items: flex-start; gap: 10px;
+  font-size: 12px; color: var(--text2); line-height: 1.6;
+}
+.step-num {
+  min-width: 20px; height: 20px; border-radius: 50%;
+  background: var(--accent); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700; flex-shrink: 0; margin-top: 1px;
+}
+.steps code {
+  font-family: var(--font-mono); font-size: 11px;
+  background: var(--bg); padding: 1px 5px; border-radius: 3px;
+  border: 1px solid var(--border); color: var(--accent2);
+}
+
+/* COMPARISON GRID */
+.compare-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 8px; margin-bottom: 0.875rem;
+}
+.compare-card {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 12px;
+}
+.compare-card h4 { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+.compare-card p { font-size: 11px; color: var(--text2); line-height: 1.5; }
+.compare-card .tag-list { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.compare-card .tag-item {
+  font-size: 10px; padding: 2px 6px; border-radius: 3px;
+  background: var(--bg2); border: 1px solid var(--border);
+  color: var(--text2);
+}
+
+/* SECTION TITLE */
+.section-title {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--text2);
+  margin-bottom: 0.75rem; padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* RESPONSIVE */
+@media (max-width: 640px) {
+  .nav-links { display: none; }
+  .hamburger { display: flex; }
+  .hero { padding: 2rem 1rem 1.5rem; }
+  pre { font-size: 11px; }
+}
+footer {
+    text-align: center;
+    padding: 2rem 1.5rem;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 0.8rem;
+    margin-top: 3rem;
+  }
+  footer code {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--green);
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="2" y="2" width="20" height="20" rx="5" fill="#6c63ff" opacity="0.2"/><path d="M7 12h10M12 7l5 5-5 5" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    Express<span>.js</span> Avanzado
+  </div>
+  <ul class="nav-links">
+    <li><a href="#middleware">Middleware</a></li>
+    <li><a href="#templates">Plantillas</a></li>
+    <li><a href="#api">API REST</a></li>
+    <li><a href="#multer">Multer</a></li>
+    <li><a href="#nodemailer">Email</a></li>
+    <li><a href="#heroku">Heroku</a></li>
+  </ul>
+  <div class="nav-right">
+    <button class="btn-theme" onclick="toggleTheme()" title="Cambiar tema">🌙</button>
+    <button class="hamburger" id="ham" onclick="toggleMenu()">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<div class="mobile-menu" id="mobileMenu">
+  <a href="#middleware" onclick="closeMenu()">Middleware</a>
+  <a href="#templates" onclick="closeMenu()">Plantillas</a>
+  <a href="#handlebars" onclick="closeMenu()">Handlebars</a>
+  <a href="#pug" onclick="closeMenu()">Pug</a>
+  <a href="#ejs" onclick="closeMenu()">EJS</a>
+  <a href="#api" onclick="closeMenu()">API REST</a>
+  <a href="#joi" onclick="closeMenu()">Joi</a>
+  <a href="#multer" onclick="closeMenu()">Multer</a>
+  <a href="#nodemailer" onclick="closeMenu()">Nodemailer</a>
+  <a href="#heroku" onclick="closeMenu()">Heroku</a>
+</div>
+
+<div class="hero">
+  <h1>Proyecto Práctico: <span>Node.js + Express</span></h1>
+  <p>Guía completa con código comentado: middleware avanzado, motores de plantillas, API RESTful, validación, uploads y envío de correos.</p>
+  <div class="badge-row">
+    <span class="badge">Express.js</span>
+    <span class="badge">Handlebars</span>
+    <span class="badge">Pug</span>
+    <span class="badge">EJS</span>
+    <span class="badge">API REST</span>
+    <span class="badge">Joi</span>
+    <span class="badge">Multer</span>
+    <span class="badge">Nodemailer</span>
+    <span class="badge">Heroku</span>
+  </div>
+</div>
+
+<main>
+<div class="section-grid">
+
+<!-- 1. MIDDLEWARE -->
+<div class="topic-card" id="middleware">
+  <div class="topic-header" onclick="toggle(this)">
+    <div class="topic-icon" style="background:rgba(108,99,255,0.15)">⚙️</div>
+    <div class="topic-title">
+      <h2>Middleware Avanzado en Express</h2>
+      <p>Funciones que interceptan el ciclo request/response</p>
+    </div>
+    <div class="topic-toggle open">▼</div>
+  </div>
+  <div class="topic-body open">
+    <div class="topic-desc">
+      Un <strong>middleware</strong> en Express es una función con acceso a <code>(req, res, next)</code> que puede ejecutar código, modificar la petición/respuesta, terminar el ciclo o llamar al siguiente middleware. Se ejecutan en orden de definición.
+    </div>
+    <div class="section-title">app.js — Servidor con middleware avanzado</div>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">JS</span>
+        <span class="code-filename">app.js</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+      </div>
+      <pre><span class="kw">const</span> <span class="var">express</span> = <span class="fn">require</span>(<span class="str">'express'</span>);
+<span class="kw">const</span> <span class="var">app</span> = <span class="fn">express</span>();
+
+<span class="com">// ─── Middleware integrado ─────────────────────────────────</span>
+<span class="com">// Permite recibir JSON en el body de las peticiones</span>
+<span class="var">app</span>.<span class="fn">use</span>(<span class="var">express</span>.<span class="fn">json</span>());
+
+<span class="com">// Permite recibir datos de formularios HTML (URL-encoded)</span>
+<span class="var">app</span>.<span class="fn">use</span>(<span class="var">express</span>.<span class="fn">urlencoded</span>({ <span class="prop">extended</span>: <span class="kw">true</span> }));
+
+<span class="com">// Sirve archivos estáticos desde la carpeta 'public'</span>
+<span class="var">app</span>.<span class="fn">use</span>(<span class="var">express</span>.<span class="fn">static</span>(<span class="str">'public'</span>));
+
+<span class="com">// ─── Middleware personalizado: Logger ─────────────────────</span>
+<span class="com">// Registra cada petición con método, ruta y timestamp</span>
+<span class="kw">const</span> <span class="var">logger</span> = (<span class="var">req</span>, <span class="var">res</span>, <span class="var">next</span>) =&gt; {
+  <span class="kw">const</span> <span class="var">time</span> = <span class="kw">new</span> <span class="fn">Date</span>().<span class="fn">toISOString</span>();
+  <span class="var">console</span>.<span class="fn">log</span>(<span class="str">`[<span class="var">${time}</span>] <span class="var">${req.method}</span> <span class="var">${req.url}</span>`</span>);
+  <span class="fn">next</span>(); <span class="com">// Cede el control al siguiente middleware</span>
+};
+<span class="var">app</span>.<span class="fn">use</span>(<span class="var">logger</span>);
+
+<span class="com">// ─── Middleware de autenticación (por ruta) ───────────────</span>
+<span class="com">// Protege rutas verificando un token en headers</span>
+<span class="kw">const</span> <span class="var">auth</span> = (<span class="var">req</span>, <span class="var">res</span>, <span class="var">next</span>) =&gt; {
+  <span class="kw">const</span> <span class="var">token</span> = <span class="var">req</span>.<span class="prop">headers</span>[<span class="str">'authorization'</span>];
+  <span class="kw">if</span> (!<span class="var">token</span>) <span class="kw">return</span> <span class="var">res</span>.<span class="fn">status</span>(<span class="num">401</span>).<span class="fn">json</span>({ <span class="prop">error</span>: <span class="str">'No autorizado'</span> });
+  <span class="fn">next</span>();
+};
+
+<span class="com">// ─── Middleware de manejo de errores ──────────────────────</span>
+<span class="com">// Recibe 4 parámetros: siempre va al FINAL de las rutas</span>
+<span class="kw">const</span> <span class="var">errorHandler</span> = (<span class="var">err</span>, <span class="var">req</span>, <span class="var">res</span>, <span class="var">next</span>) =&gt; {
+  <span class="var">console</span>.<span class="fn">error</span>(<span class="var">err</span>.<span class="prop">stack</span>);
+  <span class="var">res</span>.<span class="fn">status</span>(<span class="num">500</span>).<span class="fn">json</span>({ <span class="prop">error</span>: <span class="str">'Error interno del servidor'</span> });
+};
+
+<span class="com">// Ruta protegida con middleware de auth</span>
+<span class="var">app</span>.<span class="fn">get</span>(<span class="str">'/admin'</span>, <span class="var">auth</span>, (<span class="var">req</span>, <span class="var">res</span>) =&gt; {
+  <span class="var">res</span>.<span class="fn">send</span>(<span class="str">'Panel de administración'</span>);
+});
+
+<span class="var">app</span>.<span class="fn">use</span>(<span class="var">errorHandler</span>); <span class="com">// Registrar al final</span>
+<span class="var">app</span>.<span class="fn">listen</span>(<span class="num">3000</span>);</pre>
+    </div>
+    <div class="note warn"><strong>⚠ Desventaja del HTML dinámico con template strings:</strong> generar HTML con backticks (<code>``</code>) directamente en JS es difícil de mantener, propenso a inyección XSS, no separa lógica de presentación y no tiene soporte de IDE para autocompletado HTML.</div>
+  </div>
+</div>
+
+<!-- 2. MOTORES DE PLANTILLAS -->
+<div class="topic-card" id="templates">
+  <div class="topic-header" onclick="toggle(this)">
+    <div class="topic-icon" style="background:rgba(20,184,166,0.15)">🖼️</div>
+    <div class="topic-title">
+      <h2>Motores de Plantillas</h2>
+      <p>Concepto, comparativa Handlebars / Pug / EJS</p>
+    </div>
+    <div class="topic-toggle">▼</div>
+  </div>
+  <div class="topic-body">
+    <div class="topic-desc">
+      Un <strong>motor de plantillas</strong> (template engine) permite generar HTML dinámico combinando una plantilla estática con datos variables del servidor. Express los soporta mediante <code>app.set('view engine', 'nombre')</code>.
+    </div>
+    <div class="compare-grid">
+      <div class="compare-card">
+        <h4 style="color:#f59e0b">Handlebars</h4>
+        <p>Lógica mínima. Sintaxis <code>{{ }}</code>. Ideal para separar totalmente presentación de lógica.</p>
+        <div class="tag-list">
+          <span class="tag-item">Lógica mínima</span>
+          <span class="tag-item">Semántico</span>
+          <span class="tag-item">Partials</span>
+        </div>
+      </div>
+      <div class="compare-card">
+        <h4 style="color:#10b981">Pug</h4>
+        <p>Sintaxis indentada (sin tags de cierre). Muy compacto. Similar a HAML. Curva de aprendizaje media.</p>
+        <div class="tag-list">
+          <span class="tag-item">Compacto</span>
+          <span class="tag-item">Sin HTML</span>
+          <span class="tag-item">Rápido</span>
+        </div>
+      </div>
+      <div class="compare-card">
+        <h4 style="color:#3b82f6">EJS</h4>
+        <p>HTML puro con etiquetas <code>&lt;% %&gt;</code>. Muy cercano a HTML. Fácil de aprender para quien ya sabe HTML.</p>
+        <div class="tag-list">
+          <span class="tag-item">HTML nativo</span>
+          <span class="tag-item">Flexible</span>
+          <span class="tag-item">Familiar</span>
+        </div>
+      </div>
+    </div>
+    <div class="section-title">Instalación y configuración inicial</div>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">BASH</span>
+        <span class="code-filename">terminal</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+      </div>
+      <pre><span class="com"># Instalar los tres motores de plantillas</span>
+npm install express-handlebars hbs pug ejs
+
+<span class="com"># Instalar dependencias de utilidad</span>
+npm install morgan dotenv</pre>
+    </div>
+  </div>
+</div>
+
+<!-- 3. HANDLEBARS -->
+<div class="topic-card" id="handlebars">
+  <div class="topic-header" onclick="toggle(this)">
+    <div class="topic-icon" style="background:rgba(245,158,11,0.15)">🔶</div>
+    <div class="topic-title">
+      <h2>Proyecto con Handlebars (HBS)</h2>
+      <p>Motor de plantillas con sintaxis {{ mustache }}</p>
+    </div>
+    <div class="topic-toggle">▼</div>
+  </div>
+  <div class="topic-body">
+    <div class="topic-desc">
+      <strong>Handlebars</strong> extiende la sintaxis Mustache. Promueve la separación de preocupaciones al limitar la lógica dentro de las plantillas. Soporta partials (componentes reutilizables) y helpers.
+    </div>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">JS</span>
+        <span class="code-filename">app-handlebars.js</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+      </div>
+      <pre><span class="kw">const</span> <span class="var">express</span> = <span class="fn">require</span>(<span class="str">'express'</span>);
+<span class="kw">const</span> <span class="var">hbs</span>     = <span class="fn">require</span>(<span class="str">'hbs'</span>);
+<span class="kw">const</span> <span class="var">path</span>    = <span class="fn">require</span>(<span class="str">'path'</span>);
+<span class="kw">const</span> <span class="var">app</span>     = <span class="fn">express</span>();
+
+<span class="com">// Configura Handlebars como motor de vistas</span>
+<span class="var">app</span>.<span class="fn">set</span>(<span class="str">'view engine'</span>, <span class="str">'hbs'</span>);
+
+<span class="com">// Define la carpeta donde están las vistas (.hbs)</span>
+<span class="var">app</span>.<span class="fn">set</span>(<span class="str">'views'</span>, <span class="var">path</span>.<span class="fn">join</span>(<span class="var">__dirname</span>, <span class="str">'views'</span>));
+
+<span class="com">// Registra la carpeta de partials (fragmentos reutilizables)</span>
+<span class="var">hbs</span>.<span class="fn">registerPartials</span>(<span class="var">path</span>.<span class="fn">join</span>(<span class="var">__dirname</span>, <span class="str">'views/partials'</span>));
+
+<span class="com">// Ruta principal: pasa datos dinámicos a la vista</span>
+<span class="var">app</span>.<span class="fn">get</span>(<span class="str">'/'</span>, (<span class="var">req</span>, <span class="var">res</span>) =&gt; {
+  <span class="var">res</span>.<span class="fn">render</span>(<span class="str">'index'</span>, {
+    <span class="prop">titulo</span>:    <span class="str">'Lista de Productos'</span>,
+    <span class="prop">productos</span>: [
+      { <span class="prop">id</span>: <span class="num">1</span>, <span class="prop">nombre</span>: <span class="str">'Laptop Pro'</span>,  <span class="prop">precio</span>: <span class="num">1200</span> },
+      { <span class="prop">id</span>: <span class="num">2</span>, <span class="prop">nombre</span>: <span class="str">'Mouse Inalámbrico'</span>, <span class="prop">precio</span>: <span class="num">45</span> },
+      { <span class="prop">id</span>: <span class="num">3</span>, <span class="prop">nombre</span>: <span class="str">'Teclado Mecánico'</span>, <span class="prop">precio</span>: <span class="num">150</span> },
+    ]
+  });
+});
+
+<span class="var">app</span>.<span class="fn">listen</span>(<span class="num">3000</span>, () =&gt; <span class="var">console</span>.<span class="fn">log</span>(<span class="str">'Servidor HBS en :3000'</span>));</pre>
+    </div>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">HBS</span>
+        <span class="code-filename">views/index.hbs</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+      </div>
+      <pre><span class="tag">&lt;!DOCTYPE html&gt;</span>
+<span class="tag">&lt;html&gt;</span>
+<span class="tag">&lt;head&gt;</span>
+  <span class="com">&lt;!-- Meta para responsividad --&gt;</span>
+  <span class="tag">&lt;meta</span> <span class="prop">name</span>=<span class="str">"viewport"</span> <span class="prop">content</span>=<span class="str">"width=device-width, initial-scale=1"</span><span class="tag">&gt;</span>
+  <span class="tag">&lt;title&gt;</span>{{ titulo }}<span class="tag">&lt;/title&gt;</span>
+<span class="tag">&lt;/head&gt;</span>
+<span class="tag">&lt;body&gt;</span>
+  <span class="com">&lt;!-- Partial reutilizable del navbar --&gt;</span>
+  {{&gt; navbar}}
+
+  <span class="tag">&lt;h1&gt;</span>{{ titulo }}<span class="tag">&lt;/h1&gt;</span>
+
+  <span class="com">&lt;!-- Iteración con {{#each}} --&gt;</span>
+  {{#each productos}}
+    <span class="tag">&lt;div</span> <span class="prop">class</span>=<span class="str">"card"</span><span class="tag">&gt;</span>
+      <span class="tag">&lt;h3&gt;</span>{{ nombre }}<span class="tag">&lt;/h3&gt;</span>
+      <span class="tag">&lt;p&gt;</span>Precio: ${{ precio }}<span class="tag">&lt;/p&gt;</span>
+    <span class="tag">&lt;/div&gt;</span>
+  {{/each}}
+<span class="tag">&lt;/body&gt;</span>
+<span class="tag">&lt;/html&gt;</span></pre>
+    </div>
+  </div>
+</div>
+
+<!-- 4. PUG -->
+<div class="topic-card" id="pug">
+  <div class="topic-header" onclick="toggle(this)">
+    <div class="topic-icon" style="background:rgba(16,185,129,0.15)">🐾</div>
+    <div class="topic-title">
+      <h2>Proyecto con Pug</h2>
+      <p>Plantillas con sintaxis indentada sin tags de cierre</p>
+    </div>
+    <div class="topic-toggle">▼</div>
+  </div>
+  <div class="topic-body">
+    <div class="topic-desc">
+      <strong>Pug</strong> (antes Jade) usa <strong>indentación</strong> en vez de tags de cierre, lo que produce código muy limpio. Es sensible a los espacios (como Python). Permite mixins, herencia de layouts e interpolación de variables con <code>#{var}</code>.
+    </div>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">JS</span>
+        <span class="code-filename">app-pug.js</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+      </div>
+      <pre><span class="kw">const</span> <span class="var">express</span> = <span class="fn">require</span>(<span class="str">'express'</span>);
+<span class="kw">const</span> <span class="var">app</span>     = <span class="fn">express</span>();
+
+<span class="com">// Define Pug como motor de vistas</span>
+<span class="var">app</span>.<span class="fn">set</span>(<span class="str">'view engine'</span>, <span class="str">'pug'</span>);
+<span class="var">app</span>.<span class="fn">set</span>(<span class="str">'views'</span>, <span class="str">'./views'</span>);
+
+<span class="var">app</span>.<span class="fn">get</span>(<span class="str">'/usuarios'</span>, (<span class="var">req</span>, <span class="var">res</span>) =&gt; {
+  <span class="com">// Pasa objeto con datos al template</span>
+  <span class="var">res</span>.<span class="fn">render</span>(<span class="str">'usuarios'</span>, {
+    <span class="prop">titulo</span>:   <span class="str">'Usuarios del Sistema'</span>,
+    <span class="prop">usuarios</span>: [
+      { <span class="prop">nombre</span>: <span class="str">'Ana García'</span>,  <span class="prop">rol</span>: <span class="str">'Admin'</span>   },
+      { <span class="prop">nombre</span>: <span class="str">'Carlos Ruiz'</span>, <span class="prop">rol</span>: <span class="str">'Editor'</span>  },
+      { <span class="prop">nombre</span>: <span class="str">'María López'</span>, <span class="prop">rol</span>: <span class="str">'Viewer'</span>  },
+    ]
+  });
+});
+
+<span class="var">app</span>.<span class="fn">listen</span>(<span class="num">3001</span>);</pre>
+    </div>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">PUG</span>
+        <span class="code-filename">views/usuarios.pug</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+      </div>
+      <pre><span class="com">//- La indentación define la jerarquía (usa espacios, no tabs)</span>
+doctype html
+html(lang='es')
+  head
+    <span class="com">//- Responsividad: meta viewport</span>
+    meta(name='viewport', content='width=device-width, initial-scale=1')
+    title= titulo
+    <span class="com">//- CSS inline con variables para tema oscuro/claro</span>
+    style.
+      body { font-family: sans-serif; padding: 1rem; }
+      .card { border: 1px solid #ccc; padding: 1rem; margin: .5rem 0; }
+  body
+    h1= titulo
+    <span class="com">//- Bucle each: itera sobre el array 'usuarios'</span>
+    each user in usuarios
+      .card
+        <span class="com">//- Interpolación con #{variable}</span>
+        h3 #{user.nombre}
+        p Rol: #{user.rol}
+    <span class="com">//- Condicional</span>
+    if usuarios.length === 0
+      p No hay usuarios registrados.</pre>
+    </div>
+  </div>
+</div>
+
+<!-- 5. EJS -->
+<div class="topic-card" id="ejs">
+  <div class="topic-header" onclick="toggle(this)">
+    <div class="topic-icon" style="background:rgba(59,130,246,0.15)">📄</div>
+    <div class="topic-title">
+      <h2>Proyecto con EJS</h2>
+      <p>HTML enriquecido con etiquetas &lt;% JavaScript %&gt;</p>
+    </div>
+    <div class="topic-toggle">▼</div>
+  </div>
+  <div class="topic-body">
+    <div class="topic-desc">
+      <strong>EJS</strong> (Embedded JavaScript) permite insertar JS directamente dentro de HTML con etiquetas especiales. <code>&lt;% %&gt;</code> ejecuta código, <code>&lt;%= %&gt;</code> imprime valor con escape XSS, <code>&lt;%- %&gt;</code> imprime HTML sin escape.
+    </div>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">JS</span>
+        <span class="code-filename">app-ejs.js</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+      </div>
+      <pre><span class="kw">const</span> <span class="var">express</span> = <span class="fn">require</span>(<span class="str">'express'</span>);
+<span class="kw">const</span> <span class="var">app</span>     = <span class="fn">express</span>();
+
+<span class="com">// Configura EJS como motor de vistas</span>
+<span class="var">app</span>.<span class="fn">set</span>(<span class="str">'view engine'</span>, <span class="str">'ejs'</span>);
+<span class="var">app</span>.<span class="fn">set</span>(<span class="str">'views'</span>, <span class="str">'./views'</span>);
+<span class="var">app</span>.<span class="fn">use</span>(<span class="var">express</span>.<span class="fn">static</span>(<span class="str">'public'</span>));
+
+<span class="var">app</span>.<span class="fn">get</span>(<span class="str">'/noticias'</span>, (<span class="var">req</span>, <span class="var">res</span>) =&gt; {
+  <span class="var">res</span>.<span class="fn">render</span>(<span class="str">'noticias'</span>, {
+    <span class="prop">titulo</span>:  <span class="str">'Portal de Noticias'</span>,
+    <span class="prop">fecha</span>:   <span class="kw">new</span> <span class="fn">Date</span>().<span class="fn">toLocaleDateString</span>(<span class="str">'es-CO'</span>),
+    <span class="prop">noticias</span>: [
+      { <span class="prop">titulo</span>: <span class="str">'Node.js 22 lanzado'</span>,   <span class="prop">categoria</span>: <span class="str">'tech'</span>     },
+      { <span class="prop">titulo</span>: <span class="str">'Expo 2025 en Colombia'</span>, <span class="prop">categoria</span>: <span class="str">'eventos'</span>  },
+      { <span class="prop">titulo</span>: <span class="str">'Nueva IA de código'</span>,   <span class="prop">categoria</span>: <span class="str">'tech'</span>     },
+    ]
+  });
+});
+
+<span class="var">app</span>.<span class="fn">listen</span>(<span class="num">3002</span>);</pre>
+    </div>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">EJS</span>
+        <span class="code-filename">views/noticias.ejs</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+      </div>
+      <pre><span class="tag">&lt;!DOCTYPE html&gt;</span>
+<span class="tag">&lt;html</span> <span class="prop">lang</span>=<span class="str">"es"</span><span class="tag">&gt;</span>
+<span class="tag">&lt;head&gt;</span>
+  <span class="com">&lt;!-- Responsividad --&gt;</span>
+  <span class="tag">&lt;meta</span> <span class="prop">name</span>=<span class="str">"viewport"</span> <span class="prop">content</span>=<span class="str">"width=device-width, initial-scale=1"</span><span class="tag">&gt;</span>
+  <span class="com">&lt;!-- &lt;%= %&gt; imprime el valor con escape XSS --&gt;</span>
+  <span class="tag">&lt;title&gt;</span>&lt;%= titulo %&gt;<span class="tag">&lt;/title&gt;</span>
+<span class="tag">&lt;/head&gt;</span>
+<span class="tag">&lt;body&gt;</span>
+  <span class="com">&lt;!-- Partial: incluye el header desde otro archivo .ejs --&gt;</span>
+  &lt;%- include('partials/header') %&gt;
+
+  <span class="tag">&lt;h1&gt;</span>&lt;%= titulo %&gt;<span class="tag">&lt;/h1&gt;</span>
+  <span class="tag">&lt;p&gt;</span>Hoy: &lt;%= fecha %&gt;<span class="tag">&lt;/p&gt;</span>
+
+  <span class="com">&lt;!-- &lt;% %&gt; ejecuta JS sin imprimir --&gt;</span>
+  &lt;% noticias.forEach(noticia =&gt; { %&gt;
+    <span class="tag">&lt;article&gt;</span>
+      <span class="tag">&lt;h2&gt;</span>&lt;%= noticia.titulo %&gt;<span class="tag">&lt;/h2&gt;</span>
+      <span class="com">&lt;!-- Condicional inline en EJS --&gt;</span>
+      &lt;% if (noticia.categoria === 'tech') { %&gt;
+        <span class="tag">&lt;span</span> <span class="prop">class</span>=<span class="str">"badge tech"</span><span class="tag">&gt;</span>Tecnología<span class="tag">&lt;/span&gt;</span>
+      &lt;% } %&gt;
+    <span class="tag">&lt;/article&gt;</span>
+  &lt;% }); %&gt;
+<span class="tag">&lt;/body&gt;</span>
+<span class="tag">&lt;/html&gt;</span></pre>
+    </div>
+  </div>
+</div>
+
+<!-- 6. API REST + JOI -->
+<div class="topic-card" id="api">
+  <div class="topic-header" onclick="toggle(this)">
+    <div class="topic-icon" style="background:rgba(236,72,153,0.15)">🔌</div>
+    <div class="topic-title">
+      <h2>API RESTful + Validación con Joi</h2>
+      <p>CRUD completo: GET, POST, PUT, DELETE y prueba en Postman</p>
+    </div>
+    <div class="topic-toggle">▼</div>
+  </div>
+  <div class="topic-body">
+    <div class="topic-desc">
+      Una <strong>API RESTful</strong> expone recursos mediante verbos HTTP estándar. <strong>Joi</strong> es una librería de validación de datos de entrada que permite definir esquemas de validación de forma declarativa para proteger el servidor de datos inválidos.
+    </div>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">BASH</span>
+        <span class="code-filename">terminal</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+      </div>
+      <pre><span class="com"># Instalar Joi para validación de datos</span>
+npm install joi</pre>
+    </div>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">JS</span>
+        <span class="code-filename">routes/productos.js</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+      </div>
+      <pre><span class="kw">const</span> <span class="var">express</span> = <span class="fn">require</span>(<span class="str">'express'</span>);
+<span class="kw">const</span> <span class="var">Joi</span>     = <span class="fn">require</span>(<span class="str">'joi'</span>);
+<span class="kw">const</span> <span class="var">router</span>  = <span class="var">express</span>.<span class="fn">Router</span>();
+
+<span class="com">// Base de datos simulada en memoria</span>
+<span class="kw">let</span> <span class="var">productos</span> = [
+  { <span class="prop">id</span>: <span class="num">1</span>, <span class="prop">nombre</span>: <span class="str">'Laptop'</span>, <span class="prop">precio</span>: <span class="num">1200</span> },
+  { <span class="prop">id</span>: <span class="num">2</span>, <span class="prop">nombre</span>: <span class="str">'Mouse'</span>,  <span class="prop">precio</span>: <span class="num">45</span>   },
+];
+
+<span class="com">// Esquema Joi: define reglas de validación del body</span>
+<span class="kw">const</span> <span class="var">schema</span> = <span class="var">Joi</span>.<span class="fn">object</span>({
+  <span class="com">// nombre: string requerido, mínimo 3 caracteres</span>
+  <span class="prop">nombre</span>: <span class="var">Joi</span>.<span class="fn">string</span>().<span class="fn">min</span>(<span class="num">3</span>).<span class="fn">required</span>(),
+  <span class="com">// precio: número positivo requerido</span>
+  <span class="prop">precio</span>: <span class="var">Joi</span>.<span class="fn">number</span>().<span class="fn">positive</span>().<span class="fn">required</span>(),
+});
+
+<span class="com">// GET /api/productos — Lista todos los productos</span>
+<span class="var">router</span>.<span class="fn">get</span>(<span class="str">'/'</span>, (<span class="var">req</span>, <span class="var">res</span>) =&gt; {
+  <span class="var">res</span>.<span class="fn">json</span>(<span class="var">productos</span>);
+});
+
+<span class="com">// GET /api/productos/:id — Obtiene un producto por ID</span>
+<span class="var">router</span>.<span class="fn">get</span>(<span class="str">'/:id'</span>, (<span class="var">req</span>, <span class="var">res</span>) =&gt; {
+  <span class="kw">const</span> <span class="var">p</span> = <span class="var">productos</span>.<span class="fn">find</span>(<span class="var">x</span> =&gt; <span class="var">x</span>.<span class="prop">id</span> === +<span class="var">req</span>.<span class="prop">params</span>.<span class="prop">id</span>);
+  <span class="kw">if</span> (!<span class="var">p</span>) <span class="kw">return</span> <span class="var">res</span>.<span class="fn">status</span>(<span class="num">404</span>).<span class="fn">json</span>({ <span class="prop">error</span>: <span class="str">'No encontrado'</span> });
+  <span class="var">res</span>.<span class="fn">json</span>(<span class="var">p</span>);
+});
+
+<span class="com">// POST /api/productos — Crea un producto (valida con Joi)</span>
+<span class="var">router</span>.<span class="fn">post</span>(<span class="str">'/'</span>, (<span class="var">req</span>, <span class="var">res</span>) =&gt; {
+  <span class="com">// Valida el body con el schema definido</span>
+  <span class="kw">const</span> { <span class="var">error</span>, <span class="var">value</span> } = <span class="var">schema</span>.<span class="fn">validate</span>(<span class="var">req</span>.<span class="prop">body</span>);
+  <span class="kw">if</span> (<span class="var">error</span>) <span class="kw">return</span> <span class="var">res</span>.<span class="fn">status</span>(<span class="num">400</span>).<span class="fn">json</span>({ <span class="prop">error</span>: <span class="var">error</span>.<span class="prop">details</span>[<span class="num">0</span>].<span class="prop">message</span> });
+  <span class="kw">const</span> <span class="var">nuevo</span> = { <span class="prop">id</span>: <span class="var">Date</span>.<span class="fn">now</span>(), ...<span class="var">value</span> };
+  <span class="var">productos</span>.<span class="fn">push</span>(<span class="var">nuevo</span>);
+  <span class="var">res</span>.<span class="fn">status</span>(<span class="num">201</span>).<span class="fn">json</span>(<span class="var">nuevo</span>);
+});
+
+<span class="com">// PUT /api/productos/:id — Actualiza un producto existente</span>
+<span class="var">router</span>.<span class="fn">put</span>(<span class="str">'/:id'</span>, (<span class="var">req</span>, <span class="var">res</span>) =&gt; {
+  <span class="kw">const</span> <span class="var">idx</span> = <span class="var">productos</span>.<span class="fn">findIndex</span>(<span class="var">x</span> =&gt; <span class="var">x</span>.<span class="prop">id</span> === +<span class="var">req</span>.<span class="prop">params</span>.<span class="prop">id</span>);
+  <span class="kw">if</span> (<span class="var">idx</span> === -<span class="num">1</span>) <span class="kw">return</span> <span class="var">res</span>.<span class="fn">status</span>(<span class="num">404</span>).<span class="fn">json</span>({ <span class="prop">error</span>: <span class="str">'No encontrado'</span> });
+  <span class="kw">const</span> { <span class="var">error</span>, <span class="var">value</span> } = <span class="var">schema</span>.<span class="fn">validate</span>(<span class="var">req</span>.<span class="prop">body</span>);
+  <span class="kw">if</span> (<span class="var">error</span>) <span class="kw">return</span> <span class="var">res</span>.<span class="fn">status</span>(<span class="num">400</span>).<span class="fn">json</span>({ <span class="prop">error</span>: <span class="var">error</span>.<span class="prop">details</span>[<span class="num">0</span>].<span class="prop">message</span> });
+  <span class="var">productos</span>[<span class="var">idx</span>] = { ...<span class="var">productos</span>[<span class="var">idx</span>], ...<span class="var">value</span> };
+  <span class="var">res</span>.<span class="fn">json</span>(<span class="var">productos</span>[<span class="var">idx</span>]);
+});
+
+<span class="com">// DELETE /api/productos/:id — Elimina un producto</span>
+<span class="var">router</span>.<span class="fn">delete</span>(<span class="str">'/:id'</span>, (<span class="var">req</span>, <span class="var">res</span>) =&gt; {
+  <span class="var">productos</span> = <span class="var">productos</span>.<span class="fn">filter</span>(<span class="var">x</span> =&gt; <span class="var">x</span>.<span class="prop">id</span> !== +<span class="var">req</span>.<span class="prop">params</span>.<span class="prop">id</span>);
+  <span class="var">res</span>.<span class="fn">json</span>({ <span class="prop">mensaje</span>: <span class="str">'Producto eliminado'</span> });
+});
+
+<span class="var">module</span>.<span class="prop">exports</span> = <span class="var">router</span>;</pre>
+    </div>
+    <div class="note info"><strong>📮 Prueba en Postman:</strong> Importa la colección con los 4 endpoints: <code>GET /api/productos</code>, <code>POST</code> con body JSON <code>{"nombre":"Tablet","precio":300}</code>, <code>PUT /api/productos/1</code> con el objeto actualizado y <code>DELETE /api/productos/2</code>.</div>
+  </div>
+</div>
+
+<!-- 7. MULTER -->
+<div class="topic-card" id="multer">
+  <div class="topic-header" onclick="toggle(this)">
+    <div class="topic-icon" style="background:rgba(16,185,129,0.15)">📁</div>
+    <div class="topic-title">
+      <h2>Subir Archivos con Multer</h2>
+      <p>Middleware para manejo de multipart/form-data</p>
+    </div>
+    <div class="topic-toggle">▼</div>
+  </div>
+  <div class="topic-body">
+    <div class="topic-desc">
+      <strong>Multer</strong> es un middleware de Express para manejo de archivos subidos vía formularios <code>multipart/form-data</code>. Permite configurar el destino, nombre del archivo, filtros de tipo MIME y límite de tamaño.
+    </div>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">BASH</span>
+        <span class="code-filename">terminal</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+      </div>
+      <pre><span class="com"># Instalar Multer</span>
+npm install multer</pre>
+    </div>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">JS</span>
+        <span class="code-filename">routes/upload.js</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+      </div>
+      <pre><span class="kw">const</span> <span class="var">express</span> = <span class="fn">require</span>(<span class="str">'express'</span>);
+<span class="kw">const</span> <span class="var">multer</span>  = <span class="fn">require</span>(<span class="str">'multer'</span>);
+<span class="kw">const</span> <span class="var">path</span>    = <span class="fn">require</span>(<span class="str">'path'</span>);
+<span class="kw">const</span> <span class="var">router</span>  = <span class="var">express</span>.<span class="fn">Router</span>();
+
+<span class="com">// Configuración de almacenamiento en disco</span>
+<span class="kw">const</span> <span class="var">storage</span> = <span class="var">multer</span>.<span class="fn">diskStorage</span>({
+  <span class="com">// destination: carpeta donde se guardan los archivos</span>
+  <span class="prop">destination</span>: (<span class="var">req</span>, <span class="var">file</span>, <span class="var">cb</span>) =&gt; <span class="fn">cb</span>(<span class="kw">null</span>, <span class="str">'uploads/'</span>),
+
+  <span class="com">// filename: genera nombre único con timestamp</span>
+  <span class="prop">filename</span>: (<span class="var">req</span>, <span class="var">file</span>, <span class="var">cb</span>) =&gt; {
+    <span class="kw">const</span> <span class="var">nombre</span> = `${<span class="var">Date</span>.<span class="fn">now</span>()}-${<span class="var">file</span>.<span class="prop">originalname</span>}`;
+    <span class="fn">cb</span>(<span class="kw">null</span>, <span class="var">nombre</span>);
+  }
+});
+
+<span class="com">// Filtro: solo permite imágenes (MIME type)</span>
+<span class="kw">const</span> <span class="var">fileFilter</span> = (<span class="var">req</span>, <span class="var">file</span>, <span class="var">cb</span>) =&gt; {
+  <span class="kw">const</span> <span class="var">validos</span> = [<span class="str">'image/jpeg'</span>, <span class="str">'image/png'</span>, <span class="str">'image/webp'</span>];
+  <span class="kw">if</span> (<span class="var">validos</span>.<span class="fn">includes</span>(<span class="var">file</span>.<span class="prop">mimetype</span>)) {
+    <span class="fn">cb</span>(<span class="kw">null</span>, <span class="kw">true</span>);  <span class="com">// Acepta el archivo</span>
+  } <span class="kw">else</span> {
+    <span class="fn">cb</span>(<span class="kw">new</span> <span class="fn">Error</span>(<span class="str">'Solo se permiten imágenes'</span>), <span class="kw">false</span>);
+  }
+};
+
+<span class="com">// Instancia de multer con configuración y límites</span>
+<span class="kw">const</span> <span class="var">upload</span> = <span class="fn">multer</span>({
+  <span class="prop">storage</span>:    <span class="var">storage</span>,
+  <span class="prop">fileFilter</span>: <span class="var">fileFilter</span>,
+  <span class="prop">limits</span>: { <span class="prop">fileSize</span>: <span class="num">5</span> * <span class="num">1024</span> * <span class="num">1024</span> } <span class="com">// 5 MB máx</span>
+});
+
+<span class="com">// POST /upload — Procesa un solo archivo (campo "imagen")</span>
+<span class="var">router</span>.<span class="fn">post</span>(<span class="str">'/'</span>, <span class="var">upload</span>.<span class="fn">single</span>(<span class="str">'imagen'</span>), (<span class="var">req</span>, <span class="var">res</span>) =&gt; {
+  <span class="kw">if</span> (!<span class="var">req</span>.<span class="prop">file</span>) <span class="kw">return</span> <span class="var">res</span>.<span class="fn">status</span>(<span class="num">400</span>).<span class="fn">json</span>({ <span class="prop">error</span>: <span class="str">'Sin archivo'</span> });
+  <span class="var">res</span>.<span class="fn">json</span>({
+    <span class="prop">mensaje</span>:  <span class="str">'Archivo subido exitosamente'</span>,
+    <span class="prop">archivo</span>:  <span class="var">req</span>.<span class="prop">file</span>.<span class="prop">filename</span>,
+    <span class="prop">tamaño</span>:   `${(<span class="var">req</span>.<span class="prop">file</span>.<span class="prop">size</span> / <span class="num">1024</span>).<span class="fn">toFixed</span>(<span class="num">2</span>)} KB`,
+  });
+});
+
+<span class="var">module</span>.<span class="prop">exports</span> = <span class="var">router</span>;</pre>
+    </div>
+    <div class="note tip"><strong>💡 Para múltiples archivos:</strong> usa <code>upload.array('fotos', 5)</code> para hasta 5 archivos en el mismo campo, o <code>upload.fields([...])</code> para campos distintos.</div>
+  </div>
+</div>
+
+<!-- 8. NODEMAILER -->
+<div class="topic-card" id="nodemailer">
+  <div class="topic-header" onclick="toggle(this)">
+    <div class="topic-icon" style="background:rgba(245,158,11,0.15)">✉️</div>
+    <div class="topic-title">
+      <h2>Enviar Correos con Nodemailer</h2>
+      <p>SMTP desde Node.js con Gmail o cualquier proveedor</p>
+    </div>
+    <div class="topic-toggle">▼</div>
+  </div>
+  <div class="topic-body">
+    <div class="topic-desc">
+      <strong>Nodemailer</strong> es el módulo más popular para enviar emails desde Node.js. Soporta SMTP, OAuth2, adjuntos, HTML enriquecido y múltiples transportes (Gmail, SendGrid, Mailgun, etc.).
+    </div>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">BASH</span>
+        <span class="code-filename">terminal</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+      </div>
+      <pre><span class="com"># Instalar Nodemailer y dotenv para variables de entorno</span>
+npm install nodemailer dotenv</pre>
+    </div>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">JS</span>
+        <span class="code-filename">services/mailer.js</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+      </div>
+      <pre><span class="kw">const</span> <span class="var">nodemailer</span> = <span class="fn">require</span>(<span class="str">'nodemailer'</span>);
+<span class="fn">require</span>(<span class="str">'dotenv'</span>).<span class="fn">config</span>(); <span class="com">// Carga variables del archivo .env</span>
+
+<span class="com">// Transporter: conexión al servidor SMTP</span>
+<span class="com">// Para Gmail se debe habilitar "Contraseñas de aplicación"</span>
+<span class="kw">const</span> <span class="var">transporter</span> = <span class="var">nodemailer</span>.<span class="fn">createTransport</span>({
+  <span class="prop">service</span>: <span class="str">'gmail'</span>,          <span class="com">// Proveedor de correo</span>
+  <span class="prop">auth</span>: {
+    <span class="prop">user</span>: <span class="var">process</span>.<span class="prop">env</span>.<span class="prop">EMAIL_USER</span>, <span class="com">// Desde .env</span>
+    <span class="prop">pass</span>: <span class="var">process</span>.<span class="prop">env</span>.<span class="prop">EMAIL_PASS</span>, <span class="com">// App Password de Google</span>
+  },
+});
+
+<span class="com">/**
+ * Envía un correo electrónico
+ * @param {string} to      - Destinatario
+ * @param {string} subject - Asunto del correo
+ * @param {string} html    - Cuerpo HTML del mensaje
+ */</span>
+<span class="kw">const</span> <span class="fn">sendMail</span> = <span class="kw">async</span> (<span class="var">to</span>, <span class="var">subject</span>, <span class="var">html</span>) =&gt; {
+  <span class="com">// Opciones del mensaje: remitente, destino, asunto y cuerpo</span>
+  <span class="kw">const</span> <span class="var">mailOptions</span> = {
+    <span class="prop">from</span>:    <span class="str">`"Mi App" &lt;${<span class="var">process</span>.<span class="prop">env</span>.<span class="prop">EMAIL_USER</span>}&gt;`</span>,
+    <span class="prop">to</span>,
+    <span class="prop">subject</span>,
+    <span class="prop">html</span>,
+  };
+  <span class="com">// Envía el mensaje de forma asíncrona con async/await</span>
+  <span class="kw">const</span> <span class="var">info</span> = <span class="kw">await</span> <span class="var">transporter</span>.<span class="fn">sendMail</span>(<span class="var">mailOptions</span>);
+  <span class="kw">return</span> <span class="var">info</span>.<span class="prop">messageId</span>;
+};
+
+<span class="var">module</span>.<span class="prop">exports</span> = { <span class="prop">sendMail</span> };
+</pre>
+    </div>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">JS</span>
+        <span class="code-filename">routes/contacto.js — Uso del servicio</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+      </div>
+      <pre><span class="kw">const</span> { <span class="var">sendMail</span> } = <span class="fn">require</span>(<span class="str">'../services/mailer'</span>);
+
+<span class="var">router</span>.<span class="fn">post</span>(<span class="str">'/contacto'</span>, <span class="kw">async</span> (<span class="var">req</span>, <span class="var">res</span>) =&gt; {
+  <span class="kw">const</span> { <span class="var">nombre</span>, <span class="var">email</span>, <span class="var">mensaje</span> } = <span class="var">req</span>.<span class="prop">body</span>;
+  <span class="kw">try</span> {
+    <span class="com">// Llama al servicio de correo con HTML dinámico</span>
+    <span class="kw">await</span> <span class="fn">sendMail</span>(
+      <span class="var">email</span>,
+      <span class="str">'Confirmación de contacto'</span>,
+      <span class="str">`&lt;h1&gt;Hola ${nombre}&lt;/h1&gt;
+       &lt;p&gt;Recibimos tu mensaje: &lt;em&gt;${mensaje}&lt;/em&gt;&lt;/p&gt;`</span>
+    );
+    <span class="var">res</span>.<span class="fn">json</span>({ <span class="prop">ok</span>: <span class="kw">true</span>, <span class="prop">msg</span>: <span class="str">'Correo enviado'</span> });
+  } <span class="kw">catch</span> (<span class="var">err</span>) {
+    <span class="var">res</span>.<span class="fn">status</span>(<span class="num">500</span>).<span class="fn">json</span>({ <span class="prop">error</span>: <span class="str">'Error al enviar correo'</span> });
+  }
+});</pre>
+    </div>
+    <div class="note warn"><strong>⚠ .env nunca va en Git:</strong> agrega <code>.env</code> al <code>.gitignore</code>. Usa <code>EMAIL_USER=tucorreo@gmail.com</code> y <code>EMAIL_PASS=apppassword</code> sin comillas.</div>
+  </div>
+</div>
+
+<!-- 9. HEROKU -->
+<div class="topic-card" id="heroku">
+  <div class="topic-header" onclick="toggle(this)">
+    <div class="topic-icon" style="background:rgba(108,99,255,0.15)">☁️</div>
+    <div class="topic-title">
+      <h2>Despliegue en Heroku</h2>
+      <p>Deploy de Node.js a la nube paso a paso</p>
+    </div>
+    <div class="topic-toggle">▼</div>
+  </div>
+  <div class="topic-body">
+    <div class="topic-desc">
+      <strong>Heroku</strong> es una plataforma PaaS (Platform as a Service) que permite desplegar aplicaciones Node.js directamente desde Git. Detecta automáticamente el tipo de app y ejecuta <code>npm start</code>.
+    </div>
+    <div class="section-title">Pasos para desplegar</div>
+    <ul class="steps">
+      <li><span class="step-num">1</span>Crea el <code>Procfile</code> en la raíz: <code>web: node app.js</code> — indica a Heroku cómo iniciar el servidor</li>
+      <li><span class="step-num">2</span>Usa <code>process.env.PORT</code> en tu app: Heroku asigna un puerto dinámico</li>
+      <li><span class="step-num">3</span>Asegúrate de tener <code>package.json</code> con el script <code>"start": "node app.js"</code></li>
+      <li><span class="step-num">4</span>Instala Heroku CLI: <code>npm install -g heroku</code></li>
+      <li><span class="step-num">5</span>Login: <code>heroku login</code></li>
+      <li><span class="step-num">6</span>Crea la app: <code>heroku create nombre-de-tu-app</code></li>
+      <li><span class="step-num">7</span>Deploy: <code>git push heroku main</code></li>
+      <li><span class="step-num">8</span>Variables de entorno: <code>heroku config:set EMAIL_USER=... EMAIL_PASS=...</code></li>
+    </ul>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">JS</span>
+        <span class="code-filename">app.js — Puerto dinámico para Heroku</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+      </div>
+      <pre><span class="com">// Heroku asigna PORT via variable de entorno</span>
+<span class="com">// El || 3000 es el fallback para desarrollo local</span>
+<span class="kw">const</span> <span class="var">PORT</span> = <span class="var">process</span>.<span class="prop">env</span>.<span class="prop">PORT</span> || <span class="num">3000</span>;
+
+<span class="var">app</span>.<span class="fn">listen</span>(<span class="var">PORT</span>, () =&gt; {
+  <span class="var">console</span>.<span class="fn">log</span>(<span class="str">`Servidor corriendo en puerto ${PORT}`</span>);
+});</pre>
+    </div>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">TEXT</span>
+        <span class="code-filename">Procfile</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+      </div>
+      <pre>web: node app.js</pre>
+    </div>
+    <div class="note tip"><strong>💡 .gitignore recomendado:</strong> agrega <code>node_modules/</code>, <code>.env</code> y <code>uploads/</code> para no subir archivos pesados ni secretos al repositorio.</div>
+  </div>
+</div>
+
+</div>
+</main>
+<footer>
+  · <a style="text-decoration: none;" href="https://desingdata.github.io/desingdata/" target="_blank"><code>Desing
+        Data</code> </a> 2026 |
+    · By <a style="text-decoration: none;" href="https://miguelmauricioriveralopez18686.github.io/mrlPortafolio/"
+      target="_blank"><code>Miguel Mauricio Rivera López</code></a>
+</footer>
+<script>
+function toggle(header) {
+  const body = header.nextElementSibling;
+  const arrow = header.querySelector('.topic-toggle');
+  body.classList.toggle('open');
+  arrow.classList.toggle('open');
+}
+
+function copyCode(btn) {
+  const pre = btn.closest('.code-block').querySelector('pre');
+  const text = pre.innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✓ Copiado';
+    setTimeout(() => btn.textContent = 'Copiar', 1800);
+  });
+}
+
+function toggleTheme() {
+  const body = document.body;
+  const btn = document.querySelector('.btn-theme');
+  if (body.dataset.theme === 'light') {
+    body.removeAttribute('data-theme');
+    btn.textContent = '🌙';
+  } else {
+    body.dataset.theme = 'light';
+    btn.textContent = '☀️';
+  }
+}
+
+function toggleMenu() {
+  const ham = document.getElementById('ham');
+  const menu = document.getElementById('mobileMenu');
+  ham.classList.toggle('open');
+  menu.classList.toggle('open');
+}
+
+function closeMenu() {
+  document.getElementById('ham').classList.remove('open');
+  document.getElementById('mobileMenu').classList.remove('open');
+}
+
+document.querySelectorAll('.mobile-menu a, .nav-links a').forEach(a => {
+  a.addEventListener('click', e => {
+    const href = a.getAttribute('href');
+    if (href && href.startsWith('#')) {
+      e.preventDefault();
+      const target = document.querySelector(href);
+      if (target) {
+        const card = target;
+        const header = card.querySelector('.topic-header');
+        const body = card.querySelector('.topic-body');
+        const arrow = card.querySelector('.topic-toggle');
+        if (!body.classList.contains('open')) {
+          body.classList.add('open');
+          arrow.classList.add('open');
+        }
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+  });
+});
+</script>
+</body>
+</html>

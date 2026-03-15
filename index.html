@@ -1,0 +1,1361 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Node.js Backend </title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="icon" href="https://desingdata.github.io/desingdata/img/DesingData_favicon-96x96.png" sizes="96x96" type="image/png">
+<style>
+  :root {
+    --bg: #0d1117;
+    --bg2: #161b22;
+    --bg3: #1f2937;
+    --surface: #21262d;
+    --border: #30363d;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --green: #3fb950;
+    --green-bg: #0d2315;
+    --green-border: #1b4332;
+    --cyan: #79c0ff;
+    --cyan-bg: #051726;
+    --yellow: #e3b341;
+    --yellow-bg: #2b1d00;
+    --orange: #ffa657;
+    --orange-bg: #2b1400;
+    --purple: #d2a8ff;
+    --purple-bg: #1b1040;
+    --pink: #ff7b72;
+    --pink-bg: #2d0f0e;
+    --accent: #58a6ff;
+    --accent-glow: rgba(88,166,255,0.12);
+    --radius: 8px;
+    --navbar-h: 60px;
+  }
+  [data-theme="light"] {
+    --bg: #f6f8fa;
+    --bg2: #ffffff;
+    --bg3: #eaeef2;
+    --surface: #ffffff;
+    --border: #d0d7de;
+    --text: #1f2328;
+    --muted: #636c76;
+    --green: #1a7f37;
+    --green-bg: #dafbe1;
+    --green-border: #aceebb;
+    --cyan: #0969da;
+    --cyan-bg: #ddf4ff;
+    --yellow: #9a6700;
+    --yellow-bg: #fff8c5;
+    --orange: #bc4c00;
+    --orange-bg: #fff1e5;
+    --purple: #8250df;
+    --purple-bg: #fbefff;
+    --pink: #cf222e;
+    --pink-bg: #fff0ee;
+    --accent: #0969da;
+    --accent-glow: rgba(9,105,218,0.10);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Syne', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    transition: background .3s, color .3s;
+    line-height: 1.6;
+  }
+
+  /* ── NAVBAR ────────────────────────────────────────── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0;
+    height: var(--navbar-h);
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 1.5rem;
+    z-index: 1000;
+    backdrop-filter: blur(8px);
+  }
+  .nav-brand {
+    display: flex; align-items: center; gap: 10px;
+    font-weight: 800; font-size: 1.05rem; letter-spacing: -0.02em;
+    color: var(--text);
+    text-decoration: none;
+  }
+  .nav-logo {
+    width: 32px; height: 32px; background: var(--green);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem; font-weight: 700; color: #fff;
+  }
+  .nav-links {
+    display: flex; align-items: center; gap: 0.5rem;
+    list-style: none;
+  }
+  .nav-links a {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 6px 10px;
+    border-radius: var(--radius);
+    transition: color .2s, background .2s;
+  }
+  .nav-links a:hover { color: var(--text); background: var(--bg3); }
+  .nav-right { display: flex; align-items: center; gap: 10px; }
+  
+  /* Theme Toggle */
+  .theme-btn {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 6px 12px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    transition: all .2s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .theme-btn:hover { background: var(--surface); border-color: var(--accent); }
+
+  /* Hamburger */
+  .hamburger {
+    display: none;
+    flex-direction: column; gap: 5px;
+    background: none; border: none; cursor: pointer;
+    padding: 4px;
+  }
+  .hamburger span {
+    display: block; width: 22px; height: 2px;
+    background: var(--text);
+    border-radius: 2px;
+    transition: all .3s;
+  }
+  .hamburger.active span:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
+  .hamburger.active span:nth-child(2) { opacity: 0; }
+  .hamburger.active span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
+
+  /* Mobile Menu */
+  .mobile-menu {
+    display: none;
+    position: fixed; top: var(--navbar-h); left: 0; right: 0;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 1rem 1.5rem;
+    z-index: 999;
+    flex-direction: column; gap: 4px;
+  }
+  .mobile-menu.open { display: flex; }
+  .mobile-menu a {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.9rem; font-weight: 600;
+    padding: 10px 12px;
+    border-radius: var(--radius);
+    transition: all .2s;
+  }
+  .mobile-menu a:hover { color: var(--text); background: var(--bg3); }
+
+  /* ── LAYOUT ─────────────────────────────────────────── */
+  .page {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: calc(var(--navbar-h) + 3rem) 1.5rem 4rem;
+  }
+
+  /* ── HERO ────────────────────────────────────────────── */
+  .hero {
+    text-align: center;
+    padding: 3rem 0 4rem;
+    position: relative;
+  }
+  .hero-badge {
+    display: inline-block;
+    background: var(--green-bg);
+    color: var(--green);
+    border: 1px solid var(--green-border);
+    font-size: 0.75rem; font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    padding: 4px 12px; border-radius: 20px;
+    letter-spacing: 0.08em;
+    margin-bottom: 1.5rem;
+    text-transform: uppercase;
+  }
+  .hero h1 {
+    font-size: clamp(2.2rem, 5vw, 3.8rem);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    margin-bottom: 1rem;
+  }
+  .hero h1 span { color: var(--green); }
+  .hero p {
+    color: var(--muted);
+    font-size: 1.05rem;
+    max-width: 560px;
+    margin: 0 auto 2rem;
+  }
+  .hero-stats {
+    display: flex; justify-content: center; gap: 2rem;
+    flex-wrap: wrap;
+  }
+  .stat {
+    text-align: center;
+  }
+  .stat-num {
+    font-size: 1.8rem; font-weight: 800;
+    color: var(--accent);
+    font-family: 'JetBrains Mono', monospace;
+    line-height: 1;
+  }
+  .stat-label {
+    font-size: 0.78rem; color: var(--muted); font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.06em;
+  }
+
+  /* ── SECTION TITLE ───────────────────────────────────── */
+  .section-header {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 1.5rem;
+    padding-top: 2.5rem;
+  }
+  .section-icon {
+    width: 36px; height: 36px;
+    border-radius: var(--radius);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+  }
+  .section-header h2 {
+    font-size: 1.25rem; font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  .section-header .sec-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem; color: var(--muted);
+  }
+
+  /* ── MODULE CARD ─────────────────────────────────────── */
+  .module {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+    transition: border-color .2s;
+  }
+  .module:hover { border-color: var(--accent); }
+  .module-header {
+    padding: 1.1rem 1.4rem;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 1rem;
+    user-select: none;
+  }
+  .module-header-left {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .module-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem; font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 5px;
+    flex-shrink: 0;
+  }
+  .module-title {
+    font-size: 0.95rem; font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  .module-count {
+    font-size: 0.75rem; color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .chevron {
+    color: var(--muted);
+    font-size: 0.8rem;
+    transition: transform .3s;
+    flex-shrink: 0;
+  }
+  .module.open .chevron { transform: rotate(180deg); }
+  .module-body {
+    display: none;
+    border-top: 1px solid var(--border);
+    background: var(--bg);
+  }
+  .module.open .module-body { display: block; }
+
+  /* ── TOPIC ITEM ──────────────────────────────────────── */
+  .topics {
+    padding: 0.75rem 1rem;
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .topic {
+    display: grid;
+    grid-template-columns: 24px 1fr auto;
+    align-items: start;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: var(--radius);
+    transition: background .15s;
+  }
+  .topic:hover { background: var(--surface); }
+  .topic-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    margin-top: 7px;
+    flex-shrink: 0;
+  }
+  .topic-content {}
+  .topic-name {
+    font-size: 0.88rem; font-weight: 600;
+    color: var(--text);
+    line-height: 1.3;
+  }
+  .topic-desc {
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-top: 3px;
+    line-height: 1.45;
+  }
+  .topic-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem; font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 4px;
+    flex-shrink: 0;
+    align-self: flex-start;
+    margin-top: 2px;
+  }
+
+  /* Color variants */
+  .c-green  { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+  .c-cyan   { background: var(--cyan-bg); color: var(--cyan); border: 1px solid #0d4470; }
+  .c-yellow { background: var(--yellow-bg); color: var(--yellow); border: 1px solid #4a3500; }
+  .c-orange { background: var(--orange-bg); color: var(--orange); border: 1px solid #5a2d00; }
+  .c-purple { background: var(--purple-bg); color: var(--purple); border: 1px solid #3d2086; }
+  .c-pink   { background: var(--pink-bg); color: var(--pink); border: 1px solid #5c1a17; }
+
+  .dot-green  { background: var(--green); }
+  .dot-cyan   { background: var(--cyan); }
+  .dot-yellow { background: var(--yellow); }
+  .dot-orange { background: var(--orange); }
+  .dot-purple { background: var(--purple); }
+  .dot-pink   { background: var(--pink); }
+
+  /* ── GRID SECTIONS ──────────────────────────────────── */
+  .modules-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  /* ── FOOTER ─────────────────────────────────────────── */
+  footer {
+    text-align: center;
+    padding: 2rem 1.5rem;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 0.8rem;
+    margin-top: 3rem;
+  }
+  footer code {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--green);
+  }
+
+  /* ── RESPONSIVE ────────────────────────────────────── */
+  @media (max-width: 768px) {
+    .nav-links { display: none; }
+    .hamburger { display: flex; }
+    .hero h1 { font-size: 2rem; }
+    .hero-stats { gap: 1.2rem; }
+    .stat-num { font-size: 1.4rem; }
+    .topic { grid-template-columns: 20px 1fr; }
+    .topic-tag { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── NAVBAR ── -->
+<nav>
+  <a href="#" class="nav-brand">
+    <div class="nav-logo">N.</div>
+    Node.js Backend
+  </a>
+  <ul class="nav-links">
+    <li><a href="#plataforma">Plataforma</a></li>
+    <li><a href="#javascript">JavaScript</a></li>
+    <li><a href="#servidores">Servidores</a></li>
+    <li><a href="#bases-datos">Base de Datos</a></li>
+    <li><a href="#testing">Testing</a></li>
+  </ul>
+  <div class="nav-right">
+    <button class="theme-btn" id="themeToggle" onclick="toggleTheme()">
+      <span id="themeIcon">☀</span> <span id="themeLabel">Light</span>
+    </button>
+    <button class="hamburger" id="hamburger" onclick="toggleMenu()" aria-label="Menú">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- Mobile Menu -->
+<div class="mobile-menu" id="mobileMenu">
+  <a href="#plataforma" onclick="closeMenu()">📦 Plataforma Node.js</a>
+  <a href="#javascript" onclick="closeMenu()">⚡ JavaScript Moderno</a>
+  <a href="#servidores" onclick="closeMenu()">🌐 Servidores & Express</a>
+  <a href="#middleware" onclick="closeMenu()">🔧 Middleware Avanzado</a>
+  <a href="#bases-datos" onclick="closeMenu()">🗄 Bases de Datos</a>
+  <a href="#auth" onclick="closeMenu()">🔐 Auth & Sesiones</a>
+  <a href="#websockets" onclick="closeMenu()">🔌 WebSockets</a>
+  <a href="#arquitectura" onclick="closeMenu()">🏗 Arquitectura</a>
+  <a href="#testing" onclick="closeMenu()">🧪 Testing</a>
+  <a href="#frameworks" onclick="closeMenu()">🚀 Frameworks</a>
+</div>
+
+<div class="page">
+
+  <!-- ── HERO ── -->
+  <section class="hero">
+    <div class="hero-badge">✦ Proyecto de Estudio</div>
+    <h1>Node.js <span>Backend</span><br>Curso Completo</h1>
+    <p>Guía estructurada de todos los temas del curso, con definiciones, conceptos clave y referencias de código.</p>
+    <div class="hero-stats">
+      <div class="stat"><div class="stat-num">10</div><div class="stat-label">Módulos</div></div>
+      <div class="stat"><div class="stat-num">80+</div><div class="stat-label">Temas</div></div>
+      <div class="stat"><div class="stat-num">100%</div><div class="stat-label">Backend</div></div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════
+       MÓDULO 1 — PLATAFORMA NODE.JS
+  ══════════════════════════════════════════════════ -->
+  <div id="plataforma">
+    <div class="section-header">
+      <div class="section-icon c-green">📦</div>
+      <div>
+        <div class="sec-num">01</div>
+        <h2>Plataforma Node.js</h2>
+      </div>
+    </div>
+  </div>
+
+  <div class="module open">
+    <div class="module-header" onclick="toggleModule(this)">
+      <div class="module-header-left">
+        <span class="module-badge c-green">CORE</span>
+        <span class="module-title">Fundamentos de Node.js</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="module-count">10 temas</span>
+        <span class="chevron">▼</span>
+      </div>
+    </div>
+    <div class="module-body">
+      <div class="topics">
+
+        <div class="topic">
+          <div class="topic-dot dot-green"></div>
+          <div class="topic-content">
+            <div class="topic-name">¿Qué es Node.js?</div>
+            <div class="topic-desc">Entorno de ejecución JavaScript del lado del servidor basado en el motor V8 de Chrome. Usa un modelo de E/S no bloqueante y orientado a eventos, ideal para aplicaciones escalables en tiempo real.</div>
+          </div>
+          <span class="topic-tag c-green">TEORÍA</span>
+        </div>
+
+        <div class="topic">
+          <div class="topic-dot dot-green"></div>
+          <div class="topic-content">
+            <div class="topic-name">Consola — uso básico y avanzado</div>
+            <div class="topic-desc">La terminal es la interfaz principal para ejecutar Node.js. Incluye comandos como <code>node archivo.js</code>, redirección de stdin/stdout y variables de entorno.</div>
+          </div>
+          <span class="topic-tag c-green">HERRAM.</span>
+        </div>
+
+        <div class="topic">
+          <div class="topic-dot dot-green"></div>
+          <div class="topic-content">
+            <div class="topic-name">Instalación de Node.js</div>
+            <div class="topic-desc">Proceso de instalación mediante nvm (Node Version Manager), que permite gestionar múltiples versiones de Node.js en el mismo sistema de forma sencilla.</div>
+          </div>
+          <span class="topic-tag c-green">SETUP</span>
+        </div>
+
+        <div class="topic">
+          <div class="topic-dot dot-green"></div>
+          <div class="topic-content">
+            <div class="topic-name">¿Qué es npm?</div>
+            <div class="topic-desc">Node Package Manager: el gestor de paquetes oficial de Node.js. Permite instalar, publicar y gestionar dependencias de terceros. Comandos: <code>npm install</code>, <code>npm run</code>, <code>npm init</code>.</div>
+          </div>
+          <span class="topic-tag c-green">HERRAM.</span>
+        </div>
+
+        <div class="topic">
+          <div class="topic-dot dot-green"></div>
+          <div class="topic-content">
+            <div class="topic-name">GIT básico y GitHub</div>
+            <div class="topic-desc">Sistema de control de versiones distribuido. Git registra cambios en el código; GitHub es la plataforma en la nube para alojar repositorios. Comandos: <code>git init</code>, <code>commit</code>, <code>push</code>, <code>pull</code>.</div>
+          </div>
+          <span class="topic-tag c-green">HERRAM.</span>
+        </div>
+
+        <div class="topic">
+          <div class="topic-dot dot-green"></div>
+          <div class="topic-content">
+            <div class="topic-name">package.json y scripts</div>
+            <div class="topic-desc">Archivo de manifiesto del proyecto Node.js. Define el nombre, versión, dependencias, scripts de ejecución y metadatos. Los scripts permiten automatizar tareas como build, test y start.</div>
+          </div>
+          <span class="topic-tag c-green">CONFIG</span>
+        </div>
+
+        <div class="topic">
+          <div class="topic-dot dot-green"></div>
+          <div class="topic-content">
+            <div class="topic-name">Nodemon</div>
+            <div class="topic-desc">Herramienta de desarrollo que reinicia automáticamente el servidor Node.js cada vez que detecta cambios en los archivos del proyecto. Evita reiniciar manualmente en cada edición.</div>
+          </div>
+          <span class="topic-tag c-green">DEV</span>
+        </div>
+
+        <div class="topic">
+          <div class="topic-dot dot-green"></div>
+          <div class="topic-content">
+            <div class="topic-name">REPL de Node.js</div>
+            <div class="topic-desc">Read-Eval-Print-Loop: entorno interactivo que permite ejecutar código JavaScript directamente en la consola para pruebas rápidas y exploración de la API de Node.</div>
+          </div>
+          <span class="topic-tag c-green">DEV</span>
+        </div>
+
+        <div class="topic">
+          <div class="topic-dot dot-green"></div>
+          <div class="topic-content">
+            <div class="topic-name">Global Objects: CommonJS</div>
+            <div class="topic-desc"><code>__dirname</code> y <code>__filename</code> revelan rutas absolutas del archivo actual. <code>require()</code> importa módulos y <code>exports</code> expone funciones/valores al exterior del módulo.</div>
+          </div>
+          <span class="topic-tag c-green">MÓDULOS</span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════
+       MÓDULO 2 — JAVASCRIPT MODERNO
+  ══════════════════════════════════════════════════ -->
+  <div id="javascript">
+    <div class="section-header">
+      <div class="section-icon c-yellow">⚡</div>
+      <div>
+        <div class="sec-num">02</div>
+        <h2>JavaScript Moderno en Servidores</h2>
+      </div>
+    </div>
+  </div>
+
+  <div class="module">
+    <div class="module-header" onclick="toggleModule(this)">
+      <div class="module-header-left">
+        <span class="module-badge c-yellow">ES5+</span>
+        <span class="module-title">Callbacks y manejo de errores</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="module-count">5 temas</span>
+        <span class="chevron">▼</span>
+      </div>
+    </div>
+    <div class="module-body">
+      <div class="topics">
+
+        <div class="topic">
+          <div class="topic-dot dot-yellow"></div>
+          <div class="topic-content">
+            <div class="topic-name">Callbacks</div>
+            <div class="topic-desc">Función pasada como argumento a otra función para ejecutarse después de que una operación asíncrona termine. Patrón fundamental antes de las Promises.</div>
+          </div>
+          <span class="topic-tag c-yellow">ASYNC</span>
+        </div>
+
+        <div class="topic">
+          <div class="topic-dot dot-yellow"></div>
+          <div class="topic-content">
+            <div class="topic-name">forEach, for in, for of</div>
+            <div class="topic-desc"><code>forEach</code> itera arrays; <code>for…in</code> itera claves de objetos; <code>for…of</code> itera valores de iterables (arrays, strings, Maps). Cada uno tiene su caso de uso específico.</div>
+          </div>
+          <span class="topic-tag c-yellow">ITER.</span>
+        </div>
+
+        <div class="topic">
+          <div class="topic-dot dot-yellow"></div>
+          <div class="topic-content">
+            <div class="topic-name">try / catch y throw</div>
+            <div class="topic-desc">Mecanismo de manejo de errores síncronos. <code>throw</code> lanza una excepción; <code>try/catch</code> captura errores para evitar que el programa se detenga inesperadamente.</div>
+          </div>
+          <span class="topic-tag c-yellow">ERRORES</span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="module">
+    <div class="module-header" onclick="toggleModule(this)">
+      <div class="module-header-left">
+        <span class="module-badge c-yellow">ES6-11</span>
+        <span class="module-title">JavaScript moderno — ES6 al ES11</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="module-count">15 temas</span>
+        <span class="chevron">▼</span>
+      </div>
+    </div>
+    <div class="module-body">
+      <div class="topics">
+
+        <div class="topic">
+          <div class="topic-dot dot-yellow"></div>
+          <div class="topic-content">
+            <div class="topic-name">let, const, template strings, arrow functions</div>
+            <div class="topic-desc">ES6 introduce <code>let/const</code> con scope de bloque, template literals con <code>${}</code>, funciones flecha <code>=></code> con <code>this</code> léxico, clases, <code>Map</code>, <code>filter</code>, spread <code>...</code> y rest params.</div>
+          </div>
+          <span class="topic-tag c-yellow">ES6</span>
+        </div>
+
+        <div class="topic">
+          <div class="topic-dot dot-yellow"></div>
+          <div class="topic-content">
+            <div class="topic-name">Promises</div>
+            <div class="topic-desc">Objeto que representa el resultado eventual (éxito o fallo) de una operación asíncrona. Encadena operaciones con <code>.then()</code> y maneja errores con <code>.catch()</code>.</div>
+          </div>
+          <span class="topic-tag c-yellow">ASYNC</span>
+        </div>
+
+        <div class="topic">
+          <div class="topic-dot dot-yellow"></div>
+          <div class="topic-content">
+            <div class="topic-name">async / await (ES8)</div>
+            <div class="topic-desc">Sintaxis sobre Promises que permite escribir código asíncrono de forma secuencial y legible. <code>async</code> marca una función como asíncrona; <code>await</code> pausa la ejecución hasta resolver la Promise.</div>
+          </div>
+          <span class="topic-tag c-yellow">ES8</span>
+        </div>
+
+        <div class="topic">
+          <div class="topic-dot dot-yellow"></div>
+          <div class="topic-content">
+            <div class="topic-name">Optional chaining y Nullish Coalescing (ES11)</div>
+            <div class="topic-desc"><code>obj?.prop</code> accede a propiedades sin lanzar error si el objeto es null/undefined. <code>??</code> retorna el valor de la derecha solo si el de la izquierda es null o undefined.</div>
+          </div>
+          <span class="topic-tag c-yellow">ES11</span>
+        </div>
+
+        <div class="topic">
+          <div class="topic-dot dot-yellow"></div>
+          <div class="topic-content">
+            <div class="topic-name">Promise.allSettled (ES11)</div>
+            <div class="topic-desc">Espera a que todas las promesas se resuelvan (ya sea con éxito o rechazo) y retorna un array con el estado y valor/razón de cada una. Útil cuando quieres resultados independientemente de fallos.</div>
+          </div>
+          <span class="topic-tag c-yellow">ES11</span>
+        </div>
+
+        <div class="topic">
+          <div class="topic-dot dot-yellow"></div>
+          <div class="topic-content">
+            <div class="topic-name">TypeScript</div>
+            <div class="topic-desc">Superset tipado de JavaScript que añade tipos estáticos, interfaces y decoradores. Compila a JavaScript estándar. Mejora la detección de errores en tiempo de desarrollo.</div>
+          </div>
+          <span class="topic-tag c-yellow">TS</span>
+        </div>
+
+        <div class="topic">
+          <div class="topic-dot dot-yellow"></div>
+          <div class="topic-content">
+            <div class="topic-name">RxJS</div>
+            <div class="topic-desc">Librería de programación reactiva basada en Observables. Permite componer operaciones asíncronas y basadas en eventos con operadores como <code>map</code>, <code>filter</code>, <code>mergeMap</code>.</div>
+          </div>
+          <span class="topic-tag c-yellow">LIB</span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════
+       MÓDULO 3 — SERVIDORES HTTP
+  ══════════════════════════════════════════════════ -->
+  <div id="servidores">
+    <div class="section-header">
+      <div class="section-icon c-cyan">🌐</div>
+      <div>
+        <div class="sec-num">03</div>
+        <h2>Servidores HTTP en Node.js y Express</h2>
+      </div>
+    </div>
+  </div>
+
+  <div class="module">
+    <div class="module-header" onclick="toggleModule(this)">
+      <div class="module-header-left">
+        <span class="module-badge c-cyan">HTTP</span>
+        <span class="module-title">Módulo nativo HTTP y File System</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="module-count">6 temas</span>
+        <span class="chevron">▼</span>
+      </div>
+    </div>
+    <div class="module-body">
+      <div class="topics">
+
+        <div class="topic">
+          <div class="topic-dot dot-cyan"></div>
+          <div class="topic-content">
+            <div class="topic-name">Servidor con módulo nativo HTTP</div>
+            <div class="topic-desc">Node.js incluye el módulo <code>http</code> que permite crear servidores sin dependencias externas. Se parsean rutas y métodos manualmente con <code>req.url</code> y <code>req.method</code>.</div>
+          </div>
+          <span class="topic-tag c-cyan">NATIVO</span>
+        </div>
+
+        <div class="topic">
+          <div class="topic-dot dot-cyan"></div>
+          <div class="topic-content">
+            <div class="topic-name">Postman — pruebas de API</div>
+            <div class="topic-desc">Herramienta GUI para probar endpoints HTTP. Permite enviar requests GET, POST, PUT, DELETE con headers y body personalizados, y visualizar respuestas de forma organizada.</div>
+          </div>
+          <span class="topic-tag c-cyan">TEST</span>
+        </div>
+
+        <div class="topic">
+          <div class="topic-dot dot-cyan"></div>
+          <div class="topic-content">
+            <div class="topic-name">File System (fs)</div>
+            <div class="topic-desc">Módulo nativo de Node.js para operar con el sistema de archivos. Ofrece métodos síncronos (<code>readFileSync</code>) y asíncronos (<code>readFile</code>) para leer, escribir, copiar y eliminar archivos.</div>
+          </div>
+          <span class="topic-tag c-cyan">FS</span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="module">
+    <div class="module-header" onclick="toggleModule(this)">
+      <div class="module-header-left">
+        <span class="module-badge c-cyan">EXPRESS</span>
+        <span class="module-title">Express.js — Framework Web</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="module-count">5 temas</span>
+        <span class="chevron">▼</span>
+      </div>
+    </div>
+    <div class="module-body">
+      <div class="topics">
+
+        <div class="topic">
+          <div class="topic-dot dot-cyan"></div>
+          <div class="topic-content">
+            <div class="topic-name">¿Qué es Express?</div>
+            <div class="topic-desc">Framework minimalista y flexible para Node.js que simplifica la creación de servidores web y APIs REST. Añade un sistema de routing, middlewares y manejo de errores sobre el módulo nativo HTTP.</div>
+          </div>
+          <span class="topic-tag c-cyan">MARCO</span>
+        </div>
+
+        <div class="topic">
+          <div class="topic-dot dot-cyan"></div>
+          <div class="topic-content">
+            <div class="topic-name">Rutas, listen, headers y errores</div>
+            <div class="topic-desc">Express define rutas con <code>app.get()</code>, <code>app.post()</code>, etc. <code>app.listen(port)</code> inicia el servidor. Los headers se manipulan con <code>res.set()</code> y los errores con middleware de 4 parámetros.</div>
+          </div>
+          <span class="topic-tag c-cyan">RUTAS</span>
+        </div>
+
+        <div class="topic">
+          <div class="topic-dot dot-cyan"></div>
+          <div class="topic-content">
+            <div class="topic-name">Archivos estáticos en Express</div>
+            <div class="topic-desc"><code>express.static()</code> sirve archivos HTML, CSS, JS e imágenes directamente desde una carpeta pública sin necesidad de definir rutas individuales para cada recurso.</div>
+          </div>
+          <span class="topic-tag c-cyan">STATIC</span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════
+       MÓDULO 4 — MIDDLEWARE AVANZADO
+  ══════════════════════════════════════════════════ -->
+  <div id="middleware">
+    <div class="section-header">
+      <div class="section-icon c-orange">🔧</div>
+      <div>
+        <div class="sec-num">04</div>
+        <h2>Uso Avanzado de Middleware Express</h2>
+      </div>
+    </div>
+  </div>
+
+  <div class="module">
+    <div class="module-header" onclick="toggleModule(this)">
+      <div class="module-header-left">
+        <span class="module-badge c-orange">VIEWS</span>
+        <span class="module-title">Motores de plantillas y API REST</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="module-count">8 temas</span>
+        <span class="chevron">▼</span>
+      </div>
+    </div>
+    <div class="module-body">
+      <div class="topics">
+
+        <div class="topic">
+          <div class="topic-dot dot-orange"></div>
+          <div class="topic-content">
+            <div class="topic-name">Motores de plantillas (Handlebars, Pug, EJS)</div>
+            <div class="topic-desc">Sistemas para generar HTML dinámico en el servidor. <b>Handlebars</b> usa <code>{{ }}</code>; <b>Pug</b> usa indentación; <b>EJS</b> mezcla HTML con <code>&lt;%= %&gt;</code>. Se configuran con <code>app.set('view engine')</code>.</div>
+          </div>
+          <span class="topic-tag c-orange">VIEWS</span>
+        </div>
+
+        <div class="topic">
+          <div class="topic-dot dot-orange"></div>
+          <div class="topic-content">
+            <div class="topic-name">Heroku — deploy en la nube</div>
+            <div class="topic-desc">Plataforma PaaS (Platform as a Service) que permite desplegar aplicaciones Node.js en la nube con un simple <code>git push heroku main</code>. Gestiona servidores, escalado y dominios automáticamente.</div>
+          </div>
+          <span class="topic-tag c-orange">DEPLOY</span>
+        </div>
+
+        <div class="topic">
+          <div class="topic-dot dot-orange"></div>
+          <div class="topic-content">
+            <div class="topic-name">API RESTful básica (GET, POST, PUT, DELETE)</div>
+            <div class="topic-desc">Arquitectura para APIs HTTP que usa verbos HTTP para operaciones CRUD. GET lee, POST crea, PUT actualiza, DELETE elimina. Las rutas representan recursos como <code>/api/users/:id</code>.</div>
+          </div>
+          <span class="topic-tag c-orange">REST</span>
+        </div>
+
+        <div class="topic">
+          <div class="topic-dot dot-orange"></div>
+          <div class="topic-content">
+            <div class="topic-name">Joi — validación de datos</div>
+            <div class="topic-desc">Librería de validación de esquemas para JavaScript. Permite definir reglas estrictas para validar datos entrantes (query params, body) antes de procesarlos. Retorna errores descriptivos automáticamente.</div>
+          </div>
+          <span class="topic-tag c-orange">VALID.</span>
+        </div>
+
+        <div class="topic">
+          <div class="topic-dot dot-orange"></div>
+          <div class="topic-content">
+            <div class="topic-name">Multer — subida de archivos</div>
+            <div class="topic-desc">Middleware para manejar <code>multipart/form-data</code>, el formato usado para subir archivos. Gestiona la ubicación, nombre y tamaño de archivos subidos al servidor.</div>
+          </div>
+          <span class="topic-tag c-orange">FILES</span>
+        </div>
+
+        <div class="topic">
+          <div class="topic-dot dot-orange"></div>
+          <div class="topic-content">
+            <div class="topic-name">Nodemailer — envío de correos</div>
+            <div class="topic-desc">Librería para enviar emails desde Node.js usando SMTP. Soporta HTML, adjuntos y múltiples proveedores como Gmail, Outlook o servidores SMTP propios.</div>
+          </div>
+          <span class="topic-tag c-orange">EMAIL</span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════
+       MÓDULO 5 — BASES DE DATOS
+  ══════════════════════════════════════════════════ -->
+  <div id="bases-datos">
+    <div class="section-header">
+      <div class="section-icon c-purple">🗄</div>
+      <div>
+        <div class="sec-num">05</div>
+        <h2>Bases de Datos Modernas</h2>
+      </div>
+    </div>
+  </div>
+
+  <div class="module">
+    <div class="module-header" onclick="toggleModule(this)">
+      <div class="module-header-left">
+        <span class="module-badge c-purple">MONGO</span>
+        <span class="module-title">MongoDB y Mongoose</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="module-count">9 temas</span>
+        <span class="chevron">▼</span>
+      </div>
+    </div>
+    <div class="module-body">
+      <div class="topics">
+
+        <div class="topic">
+          <div class="topic-dot dot-purple"></div>
+          <div class="topic-content">
+            <div class="topic-name">¿Qué es MongoDB?</div>
+            <div class="topic-desc">Base de datos NoSQL orientada a documentos. Almacena datos en formato BSON (similar a JSON) en colecciones. Flexible, sin esquema fijo, ideal para datos jerárquicos y aplicaciones modernas.</div>
+          </div>
+          <span class="topic-tag c-purple">NOSQL</span>
+        </div>
+
+        <div class="topic">
+          <div class="topic-dot dot-purple"></div>
+          <div class="topic-content">
+            <div class="topic-name">MongoDB Shell — CRUD en consola</div>
+            <div class="topic-desc">CLI oficial para interactuar con MongoDB. Comandos: <code>db.collection.find()</code>, <code>insertOne()</code>, <code>updateOne()</code>, <code>deleteOne()</code>. El lenguaje de query usa objetos JSON como filtros.</div>
+          </div>
+          <span class="topic-tag c-purple">CRUD</span>
+        </div>
+
+        <div class="topic">
+          <div class="topic-dot dot-purple"></div>
+          <div class="topic-content">
+            <div class="topic-name">MongoDB Compass y Robo3T</div>
+            <div class="topic-desc">Clientes GUI para explorar y administrar bases de datos MongoDB. Compass es la herramienta oficial con visualización de esquemas; Robo3T (ahora Studio3T) es una alternativa popular con soporte a scripts.</div>
+          </div>
+          <span class="topic-tag c-purple">GUI</span>
+        </div>
+
+        <div class="topic">
+          <div class="topic-dot dot-purple"></div>
+          <div class="topic-content">
+            <div class="topic-name">MongoDB Atlas</div>
+            <div class="topic-desc">Servicio de base de datos en la nube (DBaaS) de MongoDB. Ofrece clusters gestionados, backups automáticos, monitoreo y conexión desde cualquier lugar con una URI de conexión.</div>
+          </div>
+          <span class="topic-tag c-purple">CLOUD</span>
+        </div>
+
+        <div class="topic">
+          <div class="topic-dot dot-purple"></div>
+          <div class="topic-content">
+            <div class="topic-name">Mongoose — ODM para MongoDB</div>
+            <div class="topic-desc">Object Document Mapper que añade esquemas, validaciones y métodos a los modelos de MongoDB. Define la estructura de los documentos con <code>Schema</code> y crea modelos con <code>mongoose.model()</code>.</div>
+          </div>
+          <span class="topic-tag c-purple">ODM</span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════
+       MÓDULO 6 — AUTH Y SESIONES
+  ══════════════════════════════════════════════════ -->
+  <div id="auth">
+    <div class="section-header">
+      <div class="section-icon c-pink">🔐</div>
+      <div>
+        <div class="sec-num">06</div>
+        <h2>Sesiones, Storages y Auth</h2>
+      </div>
+    </div>
+  </div>
+
+  <div class="module">
+    <div class="module-header" onclick="toggleModule(this)">
+      <div class="module-header-left">
+        <span class="module-badge c-pink">AUTH</span>
+        <span class="module-title">Passport, JWT y CORS</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="module-count">7 temas</span>
+        <span class="chevron">▼</span>
+      </div>
+    </div>
+    <div class="module-body">
+      <div class="topics">
+
+        <div class="topic">
+          <div class="topic-dot dot-pink"></div>
+          <div class="topic-content">
+            <div class="topic-name">Cookies y sesiones en Express</div>
+            <div class="topic-desc">Las cookies almacenan datos pequeños en el cliente; las sesiones guardan el estado del usuario en el servidor. <code>express-session</code> gestiona sesiones con ID almacenado en cookie.</div>
+          </div>
+          <span class="topic-tag c-pink">SESSION</span>
+        </div>
+
+        <div class="topic">
+          <div class="topic-dot dot-pink"></div>
+          <div class="topic-content">
+            <div class="topic-name">Storages de sesión</div>
+            <div class="topic-desc">Los datos de sesión pueden almacenarse en: <b>memoria</b> (solo dev), <b>archivo</b> (simple), <b>Redis</b> (alta velocidad y escalable) o <b>MongoDB</b> (persistente con <code>connect-mongo</code>).</div>
+          </div>
+          <span class="topic-tag c-pink">STORAGE</span>
+        </div>
+
+        <div class="topic">
+          <div class="topic-dot dot-pink"></div>
+          <div class="topic-content">
+            <div class="topic-name">Passport.js — autenticación</div>
+            <div class="topic-desc">Middleware de autenticación flexible para Node.js. Soporta estrategias como Local (usuario/contraseña), OAuth con Google, Facebook, GitHub y cientos más mediante plugins.</div>
+          </div>
+          <span class="topic-tag c-pink">AUTH</span>
+        </div>
+
+        <div class="topic">
+          <div class="topic-dot dot-pink"></div>
+          <div class="topic-content">
+            <div class="topic-name">JSON Web Token (JWT)</div>
+            <div class="topic-desc">Estándar abierto (RFC 7519) para transmitir información entre partes como un objeto JSON firmado digitalmente. Compuesto por header, payload y signature. Se usa para autenticación stateless en APIs REST.</div>
+          </div>
+          <span class="topic-tag c-pink">JWT</span>
+        </div>
+
+        <div class="topic">
+          <div class="topic-dot dot-pink"></div>
+          <div class="topic-content">
+            <div class="topic-name">CORS en servidores</div>
+            <div class="topic-desc">Cross-Origin Resource Sharing: política de seguridad del navegador que restringe peticiones HTTP entre orígenes distintos. El paquete <code>cors</code> en Express configura los headers necesarios para permitir o restringir acceso.</div>
+          </div>
+          <span class="topic-tag c-pink">SEGUR.</span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════
+       MÓDULO 7 — WEBSOCKETS
+  ══════════════════════════════════════════════════ -->
+  <div id="websockets">
+    <div class="section-header">
+      <div class="section-icon c-cyan">🔌</div>
+      <div>
+        <div class="sec-num">07</div>
+        <h2>WebSockets</h2>
+      </div>
+    </div>
+  </div>
+
+  <div class="module">
+    <div class="module-header" onclick="toggleModule(this)">
+      <div class="module-header-left">
+        <span class="module-badge c-cyan">WS</span>
+        <span class="module-title">Socket.io y aplicaciones en tiempo real</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="module-count">6 temas</span>
+        <span class="chevron">▼</span>
+      </div>
+    </div>
+    <div class="module-body">
+      <div class="topics">
+
+        <div class="topic">
+          <div class="topic-dot dot-cyan"></div>
+          <div class="topic-content">
+            <div class="topic-name">¿Qué es un WebSocket?</div>
+            <div class="topic-desc">Protocolo de comunicación bidireccional y persistente sobre una sola conexión TCP. A diferencia de HTTP (request-response), WebSocket permite que servidor y cliente se envíen mensajes en cualquier momento.</div>
+          </div>
+          <span class="topic-tag c-cyan">PROTO.</span>
+        </div>
+
+        <div class="topic">
+          <div class="topic-dot dot-cyan"></div>
+          <div class="topic-content">
+            <div class="topic-name">Socket.io</div>
+            <div class="topic-desc">Librería que simplifica WebSockets con fallbacks automáticos, rooms, namespaces y broadcasting. En el servidor: <code>io.on('connection', socket => {})</code>. En el cliente: <code>socket.emit('evento', data)</code>.</div>
+          </div>
+          <span class="topic-tag c-cyan">LIB</span>
+        </div>
+
+        <div class="topic">
+          <div class="topic-dot dot-cyan"></div>
+          <div class="topic-content">
+            <div class="topic-name">Chat en tiempo real</div>
+            <div class="topic-desc">Aplicación práctica de WebSockets donde múltiples clientes se conectan al servidor y se transmiten mensajes instantáneamente entre sí mediante eventos de Socket.io.</div>
+          </div>
+          <span class="topic-tag c-cyan">PROYECTO</span>
+        </div>
+
+        <div class="topic">
+          <div class="topic-dot dot-cyan"></div>
+          <div class="topic-content">
+            <div class="topic-name">Paint colaborativo</div>
+            <div class="topic-desc">Aplicación donde múltiples usuarios dibujan simultáneamente en un canvas. Cada trazo se transmite via WebSocket a todos los clientes conectados para visualización en tiempo real.</div>
+          </div>
+          <span class="topic-tag c-cyan">PROYECTO</span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════
+       MÓDULO 8 — ARQUITECTURA
+  ══════════════════════════════════════════════════ -->
+  <div id="arquitectura">
+    <div class="section-header">
+      <div class="section-icon c-green">🏗</div>
+      <div>
+        <div class="sec-num">08</div>
+        <h2>Estructura y Herramientas de Desarrollo</h2>
+      </div>
+    </div>
+  </div>
+
+  <div class="module">
+    <div class="module-header" onclick="toggleModule(this)">
+      <div class="module-header-left">
+        <span class="module-badge c-green">ARCH</span>
+        <span class="module-title">Patrones y herramientas de compilación</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="module-count">8 temas</span>
+        <span class="chevron">▼</span>
+      </div>
+    </div>
+    <div class="module-body">
+      <div class="topics">
+
+        <div class="topic">
+          <div class="topic-dot dot-green"></div>
+          <div class="topic-content">
+            <div class="topic-name">Patrón MVC — capas del servidor</div>
+            <div class="topic-desc">Model-View-Controller separa responsabilidades: el <b>Modelo</b> maneja datos, la <b>Vista</b> la presentación y el <b>Controlador</b> la lógica. Aplicado al backend: routers, servicios y repositorios.</div>
+          </div>
+          <span class="topic-tag c-green">PATRÓN</span>
+        </div>
+
+        <div class="topic">
+          <div class="topic-dot dot-green"></div>
+          <div class="topic-content">
+            <div class="topic-name">DAO / DTO / Repository</div>
+            <div class="topic-desc"><b>DAO</b> (Data Access Object) abstrae las operaciones de DB; <b>DTO</b> (Data Transfer Object) define la forma de los datos entre capas; <b>Repository</b> centraliza la lógica de acceso a datos.</div>
+          </div>
+          <span class="topic-tag c-green">PATRÓN</span>
+        </div>
+
+        <div class="topic">
+          <div class="topic-dot dot-green"></div>
+          <div class="topic-content">
+            <div class="topic-name">dotenv — configuración del servidor</div>
+            <div class="topic-desc">Librería que carga variables de entorno desde un archivo <code>.env</code> al objeto <code>process.env</code>. Permite separar configuración sensible (credenciales, puertos) del código fuente.</div>
+          </div>
+          <span class="topic-tag c-green">CONFIG</span>
+        </div>
+
+        <div class="topic">
+          <div class="topic-dot dot-green"></div>
+          <div class="topic-content">
+            <div class="topic-name">Babel — transpilación JS</div>
+            <div class="topic-desc">Compilador de JavaScript que transforma código moderno (ES6+) a versiones compatibles con entornos más antiguos. Permite usar <code>import/export</code> de ES Modules en Node.js antes de soporte nativo.</div>
+          </div>
+          <span class="topic-tag c-green">BUILD</span>
+        </div>
+
+        <div class="topic">
+          <div class="topic-dot dot-green"></div>
+          <div class="topic-content">
+            <div class="topic-name">Webpack — bundler de módulos</div>
+            <div class="topic-desc">Empaquetador de módulos que procesa assets (JS, CSS, imágenes) y genera bundles optimizados. En backend se usa para dividir código, tree-shaking y gestión de dependencias complejas.</div>
+          </div>
+          <span class="topic-tag c-green">BUILD</span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════
+       MÓDULO 9 — TESTING
+  ══════════════════════════════════════════════════ -->
+  <div id="testing">
+    <div class="section-header">
+      <div class="section-icon c-yellow">🧪</div>
+      <div>
+        <div class="sec-num">09</div>
+        <h2>Testing</h2>
+      </div>
+    </div>
+  </div>
+
+  <div class="module">
+    <div class="module-header" onclick="toggleModule(this)">
+      <div class="module-header-left">
+        <span class="module-badge c-yellow">TEST</span>
+        <span class="module-title">Jest, Mocha y pruebas de API</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="module-count">8 temas</span>
+        <span class="chevron">▼</span>
+      </div>
+    </div>
+    <div class="module-body">
+      <div class="topics">
+
+        <div class="topic">
+          <div class="topic-dot dot-yellow"></div>
+          <div class="topic-content">
+            <div class="topic-name">TDD y BDD</div>
+            <div class="topic-desc"><b>TDD</b> (Test Driven Development): escribir el test antes del código. <b>BDD</b> (Behavior Driven Development): describe el comportamiento esperado en lenguaje natural con <code>describe/it</code> para tests legibles.</div>
+          </div>
+          <span class="topic-tag c-yellow">METODOL.</span>
+        </div>
+
+        <div class="topic">
+          <div class="topic-dot dot-yellow"></div>
+          <div class="topic-content">
+            <div class="topic-name">Jest y Mocha</div>
+            <div class="topic-desc"><b>Jest</b>: framework de testing todo-en-uno con mocks, cobertura y snapshots integrados. <b>Mocha</b>: framework flexible y modular que requiere librerías adicionales como Chai para assertions.</div>
+          </div>
+          <span class="topic-tag c-yellow">LIB</span>
+        </div>
+
+        <div class="topic">
+          <div class="topic-dot dot-yellow"></div>
+          <div class="topic-content">
+            <div class="topic-name">Pruebas de API REST con Mocha</div>
+            <div class="topic-desc">Uso de <code>supertest</code> para enviar requests HTTP a la API dentro del entorno de tests. Permite verificar status codes, headers y body de las respuestas sin levantar un servidor real.</div>
+          </div>
+          <span class="topic-tag c-yellow">API</span>
+        </div>
+
+        <div class="topic">
+          <div class="topic-dot dot-yellow"></div>
+          <div class="topic-content">
+            <div class="topic-name">Mocks y Faker.js</div>
+            <div class="topic-desc">Un <b>mock</b> simula el comportamiento de dependencias externas (DB, APIs) en tests. <b>Faker.js</b> genera datos falsos pero realistas (nombres, emails, fechas) para poblar tests automáticamente.</div>
+          </div>
+          <span class="topic-tag c-yellow">MOCKS</span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════
+       MÓDULO 10 — FRAMEWORKS
+  ══════════════════════════════════════════════════ -->
+  <div id="frameworks">
+    <div class="section-header">
+      <div class="section-icon c-purple">🚀</div>
+      <div>
+        <div class="sec-num">10</div>
+        <h2>Frameworks y Entornos Backend</h2>
+      </div>
+    </div>
+  </div>
+
+  <div class="module">
+    <div class="module-header" onclick="toggleModule(this)">
+      <div class="module-header-left">
+        <span class="module-badge c-purple">FW</span>
+        <span class="module-title">Adonis, NestJS, Sails, Koa y Deno</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="module-count">6 temas</span>
+        <span class="chevron">▼</span>
+      </div>
+    </div>
+    <div class="module-body">
+      <div class="topics">
+
+        <div class="topic">
+          <div class="topic-dot dot-purple"></div>
+          <div class="topic-content">
+            <div class="topic-name">AdonisJS</div>
+            <div class="topic-desc">Framework MVC completo para Node.js con ORM propio (Lucid), sistema de autenticación, CLI robusto y estructura opinada similar a Laravel. Ideal para aplicaciones empresariales grandes.</div>
+          </div>
+          <span class="topic-tag c-purple">FW</span>
+        </div>
+
+        <div class="topic">
+          <div class="topic-dot dot-purple"></div>
+          <div class="topic-content">
+            <div class="topic-name">NestJS</div>
+            <div class="topic-desc">Framework progresivo para Node.js con TypeScript como primera clase. Usa decoradores e inyección de dependencias similar a Angular. Arquitectura modular muy usada en aplicaciones enterprise.</div>
+          </div>
+          <span class="topic-tag c-purple">FW</span>
+        </div>
+
+        <div class="topic">
+          <div class="topic-dot dot-purple"></div>
+          <div class="topic-content">
+            <div class="topic-name">Sails.js</div>
+            <div class="topic-desc">Framework MVC con soporte a WebSockets integrado y ORM (Waterline) que conecta con múltiples bases de datos. Sigue convenciones sobre configuración para generar APIs rápidamente.</div>
+          </div>
+          <span class="topic-tag c-purple">FW</span>
+        </div>
+
+        <div class="topic">
+          <div class="topic-dot dot-purple"></div>
+          <div class="topic-content">
+            <div class="topic-name">Koa</div>
+            <div class="topic-desc">Framework minimalista creado por los autores de Express. Usa <code>async/await</code> de forma nativa y un modelo de middleware basado en cascada. Muy liviano y sin funciones incorporadas innecesarias.</div>
+          </div>
+          <span class="topic-tag c-purple">FW</span>
+        </div>
+
+        <div class="topic">
+          <div class="topic-dot dot-purple"></div>
+          <div class="topic-content">
+            <div class="topic-name">Deno — el futuro</div>
+            <div class="topic-desc">Entorno de ejecución para JavaScript/TypeScript creado por el mismo creador de Node.js. Seguro por defecto (sin acceso a FS/red sin permisos), soporte nativo a TypeScript y gestión de módulos por URL.</div>
+          </div>
+          <span class="topic-tag c-purple">NEXT</span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div><!-- /page -->
+
+<footer>
+  · <a style="text-decoration: none;" href="https://desingdata.github.io/desingdata/" target="_blank"><strong>Desing
+        Data</strong> </a> 2026 |
+    · By <a style="text-decoration: none;" href="https://miguelmauricioriveralopez18686.github.io/mrlPortafolio/"
+      target="_blank"><strong>Miguel Mauricio Rivera López</strong></a>
+</footer>
+
+<script>
+  function toggleModule(header) {
+    const module = header.parentElement;
+    module.classList.toggle('open');
+  }
+
+  function toggleTheme() {
+    const html = document.documentElement;
+    const isLight = html.getAttribute('data-theme') === 'light';
+    html.setAttribute('data-theme', isLight ? '' : 'light');
+    document.getElementById('themeIcon').textContent = isLight ? '☀' : '🌙';
+    document.getElementById('themeLabel').textContent = isLight ? 'Light' : 'Dark';
+  }
+
+  function toggleMenu() {
+    const menu = document.getElementById('mobileMenu');
+    const btn = document.getElementById('hamburger');
+    menu.classList.toggle('open');
+    btn.classList.toggle('active');
+  }
+
+  function closeMenu() {
+    document.getElementById('mobileMenu').classList.remove('open');
+    document.getElementById('hamburger').classList.remove('active');
+  }
+
+  // Smooth scroll for nav links
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      const target = document.querySelector(a.getAttribute('href'));
+      if (target) {
+        e.preventDefault();
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  });
+</script>
+</body>
+</html>
